@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GTP.BG Fleet — Управление на автомобилен парк</title>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D2461;--navy2:#122878;
+  --gold:#F0B429;--gold2:#FFD166;--gold3:#C88A00;
+  --bg:#080E1C;--bg2:#0D1526;--bg3:#111C30;--bg4:#16233A;--bg5:#1C2D48;
+  --text:#EDF1FB;--text2:#8094B8;--text3:#6378A8;
+  --border:rgba(255,255,255,0.06);--borderG:rgba(240,180,41,0.18);
+  --ok:#1DB87A;--warn:#E89520;--err:#D94F4F;
+  --r:14px;--rs:8px;
+  --sb:240px;--hh:60px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Ubuntu',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:2px}
+
+/* ════════ AUTH ════════ */
+#auth{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);overflow:hidden}
+.auth-bg-grad{position:absolute;inset:0;background:radial-gradient(ellipse 60% 70% at 15% 50%,rgba(13,36,97,0.9),transparent),radial-gradient(ellipse 40% 40% at 85% 20%,rgba(240,180,41,0.05),transparent)}
+.auth-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:44px 44px}
+.auth-panel{position:relative;z-index:2;display:grid;grid-template-columns:1.1fr 1fr;max-width:980px;width:100%;margin:20px;border-radius:22px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,0.65);animation:panelIn 0.55s ease both}
+@keyframes panelIn{from{opacity:0;transform:translateY(20px) scale(0.97)}to{opacity:1;transform:none}}
+.auth-left{background:linear-gradient(155deg,#0D2461 0%,#071428 100%);padding:52px 48px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.auth-left::after{content:'';position:absolute;bottom:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:rgba(240,180,41,0.05);pointer-events:none}
+.auth-left-logo{margin-bottom:36px}
+.auth-left-title{font-size:26px;font-weight:900;color:#fff;line-height:1.25;margin-bottom:12px}
+.auth-left-title em{color:var(--gold);font-style:normal}
+.auth-left-sub{font-size:13px;color:rgba(255,255,255,0.48);line-height:1.75;margin-bottom:28px}
+.auth-feature{display:flex;align-items:flex-start;gap:10px;margin-bottom:11px;font-size:12px;color:rgba(255,255,255,0.55);line-height:1.5}
+.auth-feat-ic{width:20px;height:20px;border-radius:5px;background:rgba(240,180,41,0.12);border:1px solid rgba(240,180,41,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.auth-left-footer{margin-top:auto;font-size:10px;color:rgba(255,255,255,0.18)}
+.auth-right{background:var(--bg2);padding:44px 40px;display:flex;flex-direction:column;justify-content:center}
+.auth-seg{display:flex;gap:4px;background:var(--bg3);border-radius:var(--r);padding:4px;margin-bottom:24px}
+.auth-seg-btn{flex:1;padding:8px;border:none;border-radius:10px;font-family:'Ubuntu',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;color:var(--text3);background:transparent}
+.auth-seg-btn.on{background:var(--gold);color:#000}
+.type-row{display:flex;gap:8px;margin-bottom:18px}
+.type-btn{flex:1;padding:10px 8px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg3);cursor:pointer;font-family:'Ubuntu',sans-serif;font-size:11px;font-weight:700;color:var(--text3);transition:all 0.2s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px}
+.type-btn.on{border-color:var(--gold);color:var(--gold);background:rgba(240,180,41,0.06)}
+.af{margin-bottom:13px}
+.af-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px}
+.ai{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-family:'Ubuntu',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s}
+.ai:focus{border-color:var(--gold)}
+.ai::placeholder{color:var(--text3)}
+.ag2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.a-submit{width:100%;padding:12px;background:var(--gold);color:#000;border:none;border-radius:10px;font-family:'Ubuntu',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:opacity 0.15s;margin-top:4px}
+.a-submit:hover{opacity:0.88}
+.a-or{display:flex;align-items:center;gap:10px;margin:15px 0}
+.a-or hr{flex:1;border:none;border-top:1px solid var(--border)}
+.a-or span{font-size:10px;color:var(--text3)}
+.a-social{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.a-soc-btn{padding:9px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;font-family:'Ubuntu',sans-serif;font-size:11px;font-weight:700;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:background 0.15s}
+.a-soc-btn:hover{background:var(--bg4)}
+#biz-extra{display:none}
+
+/* ════════ APP LAYOUT ════════ */
+#app{display:none}
+#app.on{display:flex;min-height:100vh}
+.sb{width:var(--sb);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform 0.3s ease}
+.sb-logo{padding:16px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sb-plan{font-size:9px;font-weight:800;letter-spacing:0.6px;background:rgba(240,180,41,0.1);color:var(--gold);border:1px solid var(--borderG);border-radius:4px;padding:2px 7px}
+.sb-nav{flex:1;overflow-y:auto;padding:10px 0;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.sb-sec{font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;padding:12px 18px 4px}
+.ni{display:flex;align-items:center;gap:11px;padding:9px 18px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text3);transition:all 0.15s;border-left:2px solid transparent;text-decoration:none;user-select:none}
+.ni:hover{color:var(--text);background:var(--bg3)}
+.ni.on{color:var(--gold);background:rgba(240,180,41,0.06);border-left-color:var(--gold)}
+.ni svg{flex-shrink:0}
+.ni-badge{margin-left:auto;background:var(--err);color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;font-weight:800}
+.sb-foot{padding:14px 16px;border-top:1px solid var(--border)}
+.uc{display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px;border-radius:var(--r);transition:background 0.15s}
+.uc:hover{background:var(--bg3)}
+.ua{width:34px;height:34px;border-radius:50%;background:var(--navy);border:2px solid var(--borderG);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.u-name{font-size:11.5px;font-weight:700;color:var(--text)}
+.u-role{font-size:9.5px;color:var(--text3);margin-top:1px}
+.u-plan{margin-left:auto;font-size:9px;font-weight:800;color:var(--gold);background:rgba(240,180,41,0.1);border-radius:4px;padding:2px 7px}
+.main{margin-left:var(--sb);flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:var(--hh);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 22px;position:sticky;top:0;z-index:50}
+.tb-title{font-size:17px;font-weight:800;color:var(--text);flex:1}
+.tb-search{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:0 13px;height:34px;min-width:200px}
+.tb-search input{background:none;border:none;outline:none;font-family:'Ubuntu',sans-serif;font-size:12px;color:var(--text);width:100%}
+.tb-search input::placeholder{color:var(--text3)}
+.tb-icon-btn{width:34px;height:34px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:background 0.15s;position:relative;flex-shrink:0}
+.tb-icon-btn:hover{background:var(--bg4)}
+.tb-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--err);border:1.5px solid var(--bg2)}
+.btn-g{display:flex;align-items:center;gap:7px;background:var(--gold);color:#000;border:none;border-radius:10px;padding:8px 16px;font-family:'Ubuntu',sans-serif;font-size:12px;font-weight:800;cursor:pointer;transition:opacity 0.15s;white-space:nowrap}
+.btn-g:hover{opacity:0.88}
+.btn-s{display:flex;align-items:center;gap:7px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;font-family:'Ubuntu',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background 0.15s;white-space:nowrap}
+.btn-s:hover{background:var(--bg4)}
+.content{flex:1;padding:22px;overflow-y:auto;min-width:0}
+.pg{display:none}
+.pg.on{display:block}
+
+/* ── Cards ── */
+.sg{display:grid;gap:14px;margin-bottom:20px}
+.sg-4{grid-template-columns:repeat(4,1fr)}
+.sg-3{grid-template-columns:repeat(3,1fr)}
+.sg-2{grid-template-columns:1fr 1fr}
+.sg-62{grid-template-columns:62fr 38fr}
+.sg-auto{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.c{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r)}
+.c:hover{border-color:rgba(255,255,255,0.09)}
+.ch{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ch-t{font-size:12.5px;font-weight:800;color:var(--text)}
+.ch-l{font-size:11px;color:var(--gold);cursor:pointer;font-weight:600}
+.cb{padding:16px 18px}
+.sc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;transition:border-color 0.15s}
+.sc:hover{border-color:rgba(255,255,255,0.1)}
+.sc-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.sc-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sc-trend{font-size:10px;font-weight:700;display:flex;align-items:center;gap:2px}
+.up{color:var(--ok)}.dn{color:var(--err)}
+.sv{font-size:25px;font-weight:900;color:var(--text);margin-bottom:2px}
+.sl{font-size:10.5px;color:var(--text3)}
+.pbar{height:4px;background:var(--bg5);border-radius:2px;overflow:hidden;margin-top:6px}
+.pf{height:100%;border-radius:2px;background:var(--gold);transition:width 0.6s ease}
+.pf-ok{background:var(--ok)}.pf-er{background:var(--err)}.pf-w{background:var(--warn)}
+
+/* ── Table ── */
+.dt{width:100%;border-collapse:collapse}
+.dt th{text-align:left;font-size:9.5px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:7px 15px;border-bottom:1px solid var(--border);white-space:nowrap}
+.dt td{padding:11px 15px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--text2);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:rgba(255,255,255,0.02)}
+.tb{font-weight:700;color:var(--text)}
+.plate{font-family:'Ubuntu Mono',monospace;font-size:10.5px;font-weight:700;background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:2px 7px;color:var(--gold);white-space:nowrap;display:inline-block}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;border-radius:20px;padding:2px 9px}
+.b-ok{background:rgba(29,184,122,0.1);color:var(--ok)}
+.b-w{background:rgba(232,149,32,0.1);color:var(--warn)}
+.b-er{background:rgba(217,79,79,0.1);color:var(--err)}
+.b-n{background:var(--bg4);color:var(--text3)}
+.b-dot{width:4.5px;height:4.5px;border-radius:50%;background:currentColor}
+.ab{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:10px;font-weight:700;color:var(--text3);cursor:pointer;transition:all 0.15s;font-family:'Ubuntu',sans-serif}
+.ab:hover{background:var(--bg4);color:var(--text)}
+.ab-g{background:rgba(240,180,41,0.08);border-color:var(--borderG);color:var(--gold)}
+.ab-g:hover{background:rgba(240,180,41,0.15)}
+
+/* ── Charts (SVG-based) ── */
+.chart-wrap{position:relative;width:100%}
+.chart-svg{width:100%;overflow:visible}
+.chart-bar-col{transition:opacity 0.2s}
+.chart-bar-col:hover{opacity:0.75}
+.chart-axis-lbl{font-family:'Ubuntu',sans-serif;font-size:9px;fill:var(--text3)}
+
+/* ── Gauge ── */
+.gauge-r{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.gauge-r:last-child{border-bottom:none}
+.gauge-lbl{font-size:11.5px;color:var(--text2);flex:1}
+.gauge-bar{flex:2;height:5px;background:var(--bg5);border-radius:3px;overflow:hidden}
+.gauge-pct{font-size:11px;font-weight:800;color:var(--text);width:32px;text-align:right}
+
+/* ── Vehicle card ── */
+.vc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:border-color 0.2s,transform 0.2s}
+.vc:hover{border-color:rgba(240,180,41,0.22);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.3)}
+.vc-hd{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.vc-ic{width:42px;height:42px;border-radius:10px;background:var(--bg4);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.vc-nm{font-size:13.5px;font-weight:800;color:var(--text)}
+.vc-yr{font-size:10.5px;color:var(--text3);margin-top:2px}
+.vc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.vc-st{background:var(--bg4);border-radius:7px;padding:7px 9px}
+.vc-sv{font-size:11px;font-weight:800;color:var(--text)}
+.vc-sl{font-size:9px;color:var(--text3);margin-top:1px}
+.vc-ft{margin-top:11px;padding-top:11px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.tag{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--bg4);color:var(--text3);border:1px solid var(--border);display:inline-block}
+.tag-g{background:rgba(240,180,41,0.08);color:var(--gold);border-color:var(--borderG)}
+.tag-er{background:rgba(217,79,79,0.08);color:var(--err);border-color:rgba(217,79,79,0.2)}
+
+/* ── Map ── */
+.map-ph{border-radius:var(--r);height:220px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;background:linear-gradient(155deg,#071428,#0D2461)}
+.map-gl{position:absolute;inset:0;background-image:linear-gradient(rgba(240,180,41,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(240,180,41,0.05) 1px,transparent 1px);background-size:28px 28px}
+.map-overlay-bottom{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(6,14,28,0.9));padding:10px 16px;display:flex;justify-content:space-between;align-items:center}
+
+/* ── Notification items ── */
+.ni-notif{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s}
+.ni-notif:hover{background:rgba(255,255,255,0.01)}
+.ni-notif:last-child{border-bottom:none}
+.ni-notif.unread .ni-t{color:var(--text);font-weight:700}
+.ni-ico{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.ni-t{font-size:11.5px;color:var(--text2);margin-bottom:2px}
+.ni-time{font-size:10px;color:var(--text3)}
+.ni-udot{width:6px;height:6px;border-radius:50%;background:var(--gold);margin-top:4px;flex-shrink:0}
+
+/* ── Modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9998;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.on{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px;width:100%;max-width:500px;margin:20px;animation:mIn 0.25s ease both;max-height:90vh;overflow-y:auto}
+@keyframes mIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.mh{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mh-t{font-size:15px;font-weight:800;color:var(--text)}
+.mc{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1}
+.mb{padding:22px}
+.mf{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+.fr{margin-bottom:14px}
+.fl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
+.fi{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:9px;padding:10px 13px;font-family:'Ubuntu',sans-serif;font-size:12.5px;color:var(--text);outline:none;transition:border-color 0.2s}
+.fi:focus{border-color:var(--gold)}
+.fi::placeholder{color:var(--text3)}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+select.fi{appearance:none;cursor:pointer}
+select.fi option{background:var(--bg2)}
+
+/* ── Settings / Plan ── */
+.plan-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px}
+.plan-c{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;transition:all 0.2s}
+.plan-c:hover{border-color:var(--borderG);transform:translateY(-2px)}
+.plan-c.cur{border-color:var(--gold);background:rgba(240,180,41,0.04)}
+.plan-nm{font-size:14px;font-weight:900;color:var(--text);margin:6px 0 2px}
+.plan-pr{font-size:24px;font-weight:900;color:var(--text)}
+.plan-per{font-size:10px;color:var(--text3)}
+.plan-sub{font-size:10.5px;color:var(--text3);margin:6px 0 14px}
+.pf-row{font-size:10.5px;color:var(--text2);padding:5px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;text-align:left}
+.pf-row:last-of-type{border-bottom:none}
+.pf-ck{color:var(--ok);font-size:11px;flex-shrink:0}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:22px;right:22px;z-index:99999;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:11px 17px;display:flex;align-items:center;gap:9px;box-shadow:0 8px 32px rgba(0,0,0,0.4);font-size:12.5px;font-weight:600;color:var(--text);transform:translateX(130%);transition:transform 0.3s ease;max-width:300px}
+.toast.on{transform:none}
+
+/* ── Misc utils ── */
+.sec-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.sec-title{font-size:13px;color:var(--text3)}
+.empty-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
+.empty-card-ic{font-size:36px;opacity:0.25;margin-bottom:10px}
+.empty-card-t{font-size:12px;font-weight:700;color:var(--text3)}
+.empty-card-s{font-size:11px;color:var(--text3);margin-top:4px;opacity:0.7}
+
+/* ── Reports ── */
+.rep-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;transition:all 0.2s}
+.rep-card:hover{border-color:var(--borderG);transform:translateY(-3px)}
+.rep-ic{font-size:38px;margin-bottom:10px}
+.rep-nm{font-size:13.5px;font-weight:800;color:var(--text);margin-bottom:5px}
+.rep-sub{font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.5}
+
+@media(max-width:1180px){.sg-4{grid-template-columns:repeat(2,1fr)}.sg-62{grid-template-columns:1fr}}
+@media(max-width:900px){.sg-3,.plan-row{grid-template-columns:1fr 1fr}.sg-2{grid-template-columns:1fr}}
+@media(max-width:700px){.sb{transform:translateX(-100%)}.sb.open{transform:none}.main{margin-left:0}.auth-panel{grid-template-columns:1fr}.auth-left{display:none}.sg-4,.sg-3,.plan-row{grid-template-columns:1fr}}
+
+/* ── Service Records ── */
+.svc-rec-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.svc-tab{padding:7px 16px;border:1.5px solid var(--border);border-radius:20px;font-size:11px;font-weight:700;color:var(--text3);background:var(--bg3);cursor:pointer;transition:all 0.15s;font-family:'Ubuntu',sans-serif}
+.svc-tab.on{border-color:var(--gold);color:var(--gold);background:rgba(240,180,41,0.06)}
+.svc-stat-mini{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)}
+.svc-stat-mini b{color:var(--text);font-size:13px}
+.rec-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:border-color 0.15s}
+.rec-card:hover{border-color:rgba(255,255,255,0.1)}
+.rec-card.overdue{border-color:rgba(217,79,79,0.25);background:rgba(217,79,79,0.02)}
+.rec-card.soon{border-color:rgba(232,149,32,0.25)}
+.rec-ico{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.rec-body{flex:1;min-width:0}
+.rec-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.rec-meta{font-size:11px;color:var(--text3);margin-bottom:6px}
+.rec-bar-row{display:flex;align-items:center;gap:10px}
+.rec-bar{flex:1;height:4px;background:var(--bg5);border-radius:2px;overflow:hidden}
+.rec-bar-fill{height:100%;border-radius:2px;transition:width 0.4s ease}
+.rec-bar-pct{font-size:10px;font-weight:700;min-width:30px;text-align:right}
+.rec-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.rec-date{font-size:10px;color:var(--text3);white-space:nowrap}
+.rec-km{font-size:10px;font-weight:700;color:var(--text2)}
+.svc-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.svc-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.svc-type-btn{padding:10px 8px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg3);cursor:pointer;font-size:11px;font-weight:700;color:var(--text3);text-align:center;transition:all 0.15s;font-family:'Ubuntu',sans-serif;display:flex;flex-direction:column;align-items:center;gap:4px}
+.svc-type-btn.on{border-color:var(--gold);color:var(--gold);background:rgba(240,180,41,0.06)}
+.svc-type-btn span{font-size:18px}
+.cost-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(240,180,41,0.1);border:1px solid var(--borderG);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--gold)}
+.history-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.history-row:last-child{border-bottom:none}
+.history-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.history-title{font-size:12px;font-weight:700;color:var(--text);flex:1}
+.history-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.history-date{font-size:10px;color:var(--text3);text-align:right;white-space:nowrap}
+.history-cost{font-size:11px;font-weight:700;color:var(--text);text-align:right;white-space:nowrap}
+.next-badge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.nb-ok{background:rgba(29,184,122,0.1);color:var(--ok)}
+.nb-warn{background:rgba(232,149,32,0.1);color:var(--warn)}
+.nb-err{background:rgba(217,79,79,0.1);color:var(--err)}
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════ AUTH ═══════════ -->
+<div id="auth">
+  <div class="auth-bg-grad"></div>
+  <div class="auth-grid"></div>
+  <div class="auth-panel">
+
+    <!-- Left hero -->
+    <div class="auth-left">
+      <div class="auth-left-logo">
+        <svg width="150" height="120" viewBox="0 0 150 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_1660_4611)">
+<path d="M89.144 1.18367H51.3587V10.6939H64.2799V46.1633H76.1821V10.6939H89.1848V1.18367H89.144Z" fill="white"/>
+<path d="M23.3152 46.9388C18.6277 46.9388 14.4701 46.0816 10.9239 44.3265C7.33698 42.6122 4.606 40.0408 2.731 36.6122C0.815244 33.2245 -0.0814955 28.9796 2.62461e-05 23.9184C0.16307 18.8163 1.34514 14.4898 3.50546 10.9796C5.66579 7.46939 8.64133 4.81633 12.3913 3.02041C16.1821 1.26531 20.3805 0.367348 25.068 0.367348C32.0788 0.367348 37.3777 1.71429 40.9239 4.36735C44.4701 7.02041 46.875 10.898 48.0979 16.0408L36.644 17.7143C36.1957 15.8367 35.3397 14.4082 34.0354 13.4286C32.7718 12.449 31.3044 11.7551 29.7147 11.3878C28.0843 11.0204 26.5761 10.8163 25.1087 10.8163C20.3397 10.8163 16.9158 11.9592 14.837 14.2857C12.7582 16.6122 11.7392 19.5102 11.7799 23.0204C11.7799 27.3469 13.0843 30.5714 15.6522 32.7755C18.2201 34.9796 21.9294 36.0408 26.7392 36.0408C31.5489 36.0408 29.6332 35.8776 31.1413 35.5918C32.6495 35.3061 34.0761 34.7755 35.3805 34.0408C36.6848 33.3061 37.6631 32.2041 38.356 30.7755H30.6114V22.7755H49.0354V46.0816H41.1277L38.6006 40.3265H38.4375C37.9484 41.2245 37.2147 42.0816 36.2772 42.898C35.3397 43.6735 34.2392 44.3673 32.9756 44.9796C31.712 45.551 30.2446 46.0408 28.6549 46.3673C27.0245 46.6939 25.2718 46.898 23.356 46.898H23.3152V46.9388Z" fill="white"/>
+<path d="M121.671 1.30612H94.9321V38.3673C96.5625 37.102 98.6005 36.3673 100.842 36.3673C103.084 36.3673 105.122 37.102 106.753 38.3673V28.6122L121.671 28.5306C126.889 28.5306 139.158 26.6939 139.158 14.5306C139.158 2.36735 127.092 1.30612 121.671 1.30612ZM119.918 20.1633H106.753V10.2041H119.918C124.117 10.2041 128.519 10.7755 128.519 15.3061C128.519 19.8367 124.117 20.2041 119.918 20.2041V20.1633Z" fill="white"/>
+<path d="M111.603 51.102V33.5102H119.674C120.122 33.5102 120.652 33.5102 121.304 33.5102C121.957 33.5102 122.609 33.6327 123.302 33.7551C123.995 33.8776 124.647 34.1225 125.217 34.449C125.829 34.7755 126.318 35.2245 126.685 35.8367C127.052 36.4082 127.255 37.1837 127.255 38.0816C127.255 38.9796 127.133 39.3469 126.807 39.9184C126.522 40.4898 125.992 40.9388 125.258 41.3061C124.524 41.6735 123.424 41.8776 122.038 41.9592V42.0816C123.668 42.0816 124.891 42.3265 125.788 42.6939C126.685 43.0612 127.296 43.551 127.663 44.1633C128.03 44.7755 128.193 45.4286 128.193 46.2041C128.193 46.9796 127.989 47.9592 127.582 48.5714C127.174 49.1837 126.644 49.6735 125.992 50C125.34 50.3265 124.606 50.5714 123.872 50.7347C123.098 50.8571 122.364 50.9796 121.63 50.9796C120.897 50.9796 120.245 50.9796 119.674 50.9796H111.603V51.102ZM116.168 40.449H119.103C119.674 40.449 120.204 40.449 120.774 40.3673C121.345 40.3673 121.793 40.1633 122.16 39.9184C122.527 39.6735 122.731 39.2653 122.731 38.6939C122.731 38.1225 122.568 37.7143 122.201 37.5102C121.875 37.2653 121.427 37.1429 120.856 37.102C120.285 37.102 119.715 37.0204 119.103 37.0204H116.168V40.4082V40.449ZM116.168 47.6327H119.226C119.918 47.6327 120.611 47.6327 121.223 47.551C121.834 47.551 122.364 47.3469 122.772 47.0612C123.179 46.7755 123.383 46.3265 123.383 45.6327C123.383 44.9388 123.179 44.4898 122.813 44.2449C122.446 44 121.916 43.7959 121.304 43.7551C120.693 43.7143 120 43.6735 119.266 43.6735H116.209V47.6327H116.168Z" fill="white"/>
+<path d="M138.954 51.4286C137.12 51.4286 135.489 51.102 134.103 50.4082C132.717 49.7143 131.617 48.7347 130.883 47.3878C130.149 46.0408 129.783 44.4082 129.823 42.4082C129.905 40.4082 130.353 38.7347 131.209 37.3469C132.065 35.9592 133.207 34.9388 134.674 34.2449C136.141 33.551 137.772 33.1837 139.606 33.1837C142.337 33.1837 144.416 33.7143 145.802 34.7347C147.188 35.7959 148.125 37.3061 148.614 39.3061L144.13 39.9592C143.967 39.2245 143.601 38.6939 143.111 38.2857C142.622 37.9184 142.052 37.6327 141.399 37.4694C140.788 37.3469 140.177 37.2653 139.606 37.2653C137.731 37.2653 136.386 37.7143 135.571 38.6122C134.755 39.5102 134.348 40.6531 134.389 42.0408C134.389 43.7143 134.878 44.9796 135.897 45.8367C136.916 46.6939 138.342 47.102 140.217 47.102C142.092 47.102 141.359 47.102 141.929 46.9388C142.541 46.8163 143.071 46.6122 143.601 46.3265C144.09 46.0408 144.497 45.5918 144.742 45.0612H141.726V41.9592H148.94V51.0612H145.842L144.864 48.8163H144.783C144.579 49.1837 144.293 49.5102 143.927 49.7959C143.56 50.1224 143.111 50.3673 142.622 50.6122C142.133 50.8571 141.563 51.0204 140.91 51.1429C140.299 51.2653 139.565 51.3469 138.832 51.3469L138.954 51.4286Z" fill="white"/>
+<path d="M100.842 50.9388C103.492 50.9388 105.652 48.7755 105.652 46.1224C105.652 43.4694 103.492 41.3061 100.842 41.3061C98.193 41.3061 96.0327 43.4694 96.0327 46.1224C96.0327 48.7755 98.193 50.9388 100.842 50.9388Z" fill="#F1B61E"/>
+<path d="M132.351 115.347V98.2857H143.274V100.939H135.448V105.143H142.418V107.714H135.448V112.735H143.886V115.388H132.351V115.347Z" fill="#F1B61E"/>
+<path d="M114.334 98.2449C114.701 98.8571 115.109 99.6327 115.557 100.531C116.005 101.429 116.454 102.367 116.902 103.388C117.351 104.367 117.799 105.388 118.247 106.408C118.696 107.429 119.103 108.367 119.511 109.224C119.878 108.367 120.285 107.429 120.734 106.408C121.182 105.388 121.63 104.367 122.079 103.388C122.527 102.367 122.976 101.429 123.424 100.531C123.872 99.6327 124.28 98.8571 124.647 98.2449H127.459C127.622 99.5102 127.745 100.816 127.867 102.245C127.989 103.633 128.111 105.061 128.193 106.571C128.315 108.041 128.397 109.51 128.478 111.02C128.56 112.49 128.641 113.959 128.723 115.347H125.666C125.584 113.347 125.503 111.306 125.421 109.224C125.34 107.143 125.217 105.102 125.014 103.102C124.851 103.469 124.606 103.918 124.361 104.449C124.117 104.98 123.872 105.551 123.587 106.163C123.302 106.776 123.016 107.388 122.731 108.041C122.446 108.694 122.16 109.347 121.875 109.959C121.63 110.571 121.386 111.143 121.141 111.673C120.897 112.204 120.734 112.653 120.571 113.02H118.247C118.084 112.653 117.88 112.163 117.677 111.633C117.432 111.102 117.187 110.531 116.902 109.918C116.658 109.306 116.372 108.653 116.087 108C115.802 107.347 115.516 106.694 115.231 106.122C114.946 105.51 114.701 104.939 114.457 104.408C114.212 103.878 114.008 103.429 113.804 103.061C113.641 105.02 113.478 107.061 113.397 109.184C113.315 111.265 113.234 113.347 113.193 115.306H110.136C110.217 113.878 110.258 112.449 110.34 110.939C110.421 109.429 110.543 107.918 110.625 106.449C110.747 104.939 110.87 103.51 110.992 102.122C111.114 100.735 111.277 99.4286 111.399 98.2449H114.334Z" fill="#F1B61E"/>
+<path d="M102.514 115.714C101.25 115.714 100.109 115.51 99.0897 115.143C98.0707 114.735 97.2147 114.163 96.5218 113.429C95.8288 112.653 95.2582 111.714 94.8913 110.612C94.5245 109.51 94.3207 108.245 94.3207 106.816C94.3207 105.388 94.5245 104.122 94.9729 103.02C95.4212 101.918 96.0326 100.98 96.7663 100.245C97.5 99.4694 98.3968 98.898 99.4158 98.4898C100.435 98.0816 101.535 97.9184 102.677 97.9184C103.818 97.9184 104.022 97.9592 104.592 98.0816C105.163 98.1633 105.652 98.2857 106.101 98.4082C106.508 98.5306 106.875 98.6939 107.16 98.8163C107.446 98.9796 107.649 99.0612 107.731 99.1429L106.834 101.673C106.427 101.429 105.856 101.184 105.122 100.98C104.389 100.735 103.614 100.653 102.758 100.653C101.902 100.653 101.332 100.776 100.679 101.061C100.027 101.306 99.4973 101.673 99.0082 102.204C98.5598 102.694 98.193 103.347 97.9076 104.122C97.6631 104.898 97.5 105.796 97.5 106.816C97.5 107.837 97.5815 108.531 97.7854 109.306C97.9892 110.082 98.3152 110.735 98.7636 111.265C99.1712 111.796 99.7419 112.245 100.394 112.531C101.046 112.816 101.821 112.98 102.758 112.98C103.696 112.98 104.755 112.857 105.448 112.653C106.141 112.408 106.671 112.204 107.038 112L107.853 114.531C107.649 114.653 107.405 114.776 107.038 114.939C106.712 115.061 106.304 115.184 105.856 115.347C105.408 115.469 104.878 115.551 104.307 115.633C103.736 115.714 103.125 115.755 102.473 115.755H102.514V115.714Z" fill="#F1B61E"/>
+<path d="M76.7935 100.898V104.49H78.4647C79.6875 104.49 80.788 104.571 81.7663 104.776C82.7446 104.98 83.5598 105.306 84.2119 105.755C84.8641 106.163 85.394 106.735 85.7201 107.469C86.0869 108.163 86.25 109.02 86.25 110C86.25 111.837 85.5978 113.225 84.2527 114.163C82.9076 115.061 81.0326 115.51 78.5462 115.51C76.0598 115.51 77.0788 115.469 76.2228 115.388C75.3668 115.306 74.5516 115.184 73.7772 115.02V98.2857H84.7011V100.939H76.7935V100.898ZM77.8532 112.816H79.2391C79.7282 112.816 80.2174 112.735 80.7065 112.653C81.1956 112.571 81.6032 112.408 81.9293 112.204C82.2962 112 82.5815 111.714 82.7853 111.347C82.9891 111.02 83.1114 110.571 83.1114 110.041C83.1114 109.51 82.9891 108.98 82.7853 108.571C82.5815 108.204 82.2554 107.918 81.8478 107.673C81.4402 107.429 80.9511 107.306 80.3397 107.225C79.769 107.143 79.1168 107.061 78.3831 107.061H76.7935V112.776C76.9565 112.776 77.0788 112.776 77.2418 112.816H77.8532Z" fill="#F1B61E"/>
+<path d="M59.3478 115.347V98.2857H70.2717V100.939H62.4457V105.143H69.4158V107.714H62.4457V112.735H70.8832V115.388H59.3478V115.347Z" fill="#F1B61E"/>
+<path d="M56.9837 98.2449V100.939H51.7663V115.306H48.6277V100.939H43.4103V98.2449H56.9837Z" fill="#F1B61E"/>
+<path d="M22.7038 106.776C22.7038 107.714 22.8261 108.571 23.0299 109.347C23.2745 110.122 23.6006 110.735 24.0082 111.306C24.4565 111.837 24.9864 112.245 25.5978 112.531C26.2093 112.816 26.943 112.98 27.7174 112.98C28.4919 112.98 29.1848 112.816 29.7962 112.531C30.4076 112.245 30.9375 111.837 31.3859 111.306C31.8343 110.776 32.1603 110.122 32.4049 109.347C32.6495 108.571 32.731 107.714 32.731 106.776C32.731 105.837 32.6087 104.98 32.4049 104.245C32.1603 103.469 31.8343 102.816 31.3859 102.286C30.9783 101.755 30.4484 101.306 29.7962 101.02C29.144 100.735 28.4919 100.571 27.7174 100.571C26.943 100.571 26.2093 100.735 25.5978 101.02C24.9864 101.306 24.4565 101.755 24.0082 102.286C23.6006 102.816 23.2745 103.469 23.0299 104.245C22.7853 105.02 22.7038 105.837 22.7038 106.776ZM35.9919 106.776C35.9919 108.245 35.7881 109.51 35.3397 110.653C34.9321 111.755 34.3207 112.694 33.587 113.469C32.8533 114.204 31.9973 114.776 30.9783 115.143C29.9593 115.51 28.8995 115.714 27.7989 115.714C26.6984 115.714 25.5978 115.51 24.5788 115.143C23.5598 114.776 22.7038 114.204 21.9294 113.469C21.1957 112.694 20.5843 111.796 20.1766 110.653C19.7283 109.551 19.5245 108.245 19.5245 106.776C19.5245 105.306 19.7283 104.041 20.1766 102.939C20.625 101.837 21.2364 100.898 21.9701 100.122C22.7446 99.3469 23.6413 98.8163 24.6196 98.4082C25.6386 98.0408 26.6576 97.8367 27.7989 97.8367C28.9402 97.8367 29.9593 98.0408 30.9783 98.4082C31.9973 98.7755 32.8533 99.3469 33.587 100.122C34.3207 100.898 34.9321 101.796 35.3805 102.939C35.8288 104.041 36.0326 105.306 36.0326 106.776H35.9919Z" fill="#F1B61E"/>
+<path d="M0 112.694H2.11957C2.85326 111.673 3.42391 110.612 3.83152 109.51C4.23913 108.367 4.52446 107.224 4.72826 106C4.93207 104.776 5.05435 103.551 5.05435 102.245C5.05435 100.939 5.09511 99.6327 5.09511 98.2449H15.5299V112.694H18.0571V119.878H15.0815V115.306H3.0163V119.878H0V112.694ZM8.11141 100.898C8.07065 101.878 7.98913 102.898 7.94837 103.918C7.86685 104.939 7.74457 105.959 7.58152 106.98C7.41848 108 7.17391 108.98 6.88859 109.918C6.5625 110.857 6.15489 111.755 5.625 112.612H12.5951V100.857H8.11141V100.898Z" fill="#F1B61E"/>
+<path d="M149.878 83.8367C149.878 84.1224 149.918 84.3265 149.918 84.449V84.8571C149.918 85.8776 149.755 86.9388 149.429 88C149.103 89.102 148.696 90.1225 148.084 91.0612L145.761 90.4082C146.168 89.4694 146.413 88.5306 146.535 87.5918C146.698 86.6939 146.739 85.8776 146.739 85.1837V83.7959H149.878V83.8367Z" fill="#F1B61E"/>
+<path d="M132.351 87.102V70.0408H143.274V72.6939H135.448V76.898H142.418V79.4694H135.448V84.4898H143.886V87.1429H132.351V87.102Z" fill="#F1B61E"/>
+<path d="M114.334 70.0408C114.701 70.6531 115.109 71.4286 115.557 72.3265C116.005 73.2245 116.454 74.1633 116.902 75.1837C117.351 76.1633 117.799 77.1837 118.247 78.2041C118.696 79.2245 119.144 80.1633 119.511 81.0204C119.878 80.1633 120.285 79.2245 120.734 78.2041C121.182 77.1837 121.63 76.1633 122.079 75.1837C122.527 74.1633 122.976 73.2245 123.424 72.3265C123.872 71.4286 124.28 70.6531 124.647 70.0408H127.459C127.622 71.3061 127.745 72.6122 127.867 74.0408C127.989 75.4286 128.111 76.8571 128.193 78.3673C128.315 79.8367 128.397 81.3061 128.478 82.8163C128.56 84.2857 128.641 85.7551 128.723 87.1429H125.666C125.584 85.1429 125.503 83.102 125.421 81.0204C125.34 78.9388 125.217 76.898 125.014 74.898C124.851 75.2653 124.606 75.7143 124.361 76.2449C124.117 76.7755 123.872 77.3469 123.587 77.9592C123.302 78.5714 123.016 79.1837 122.731 79.8367C122.446 80.4898 122.16 81.1429 121.916 81.7551C121.671 82.3673 121.427 82.9388 121.182 83.4694C120.938 84 120.774 84.449 120.611 84.8163H118.288C118.125 84.449 117.921 83.9592 117.717 83.4286C117.473 82.898 117.228 82.3265 116.943 81.7143C116.698 81.102 116.413 80.449 116.087 79.7959C115.802 79.1429 115.516 78.4898 115.272 77.9184C114.986 77.3061 114.742 76.7347 114.497 76.2041C114.253 75.6735 114.049 75.2245 113.845 74.8571C113.682 76.8163 113.519 78.8571 113.438 80.9796C113.356 83.0612 113.274 85.1429 113.234 87.102H110.177C110.258 85.6735 110.299 84.2449 110.38 82.7347C110.462 81.2245 110.584 79.7143 110.666 78.2449C110.788 76.7347 110.91 75.3061 111.033 73.9184C111.155 72.5306 111.318 71.2245 111.44 70.0408H114.334Z" fill="#F1B61E"/>
+<path d="M102.514 87.4694C101.25 87.4694 100.109 87.2653 99.0897 86.898C98.0707 86.4898 97.2147 85.9184 96.5218 85.1837C95.8288 84.4082 95.2582 83.4694 94.8913 82.3673C94.5245 81.2653 94.3207 80 94.3207 78.5714C94.3207 77.1429 94.5245 75.8776 94.9729 74.7755C95.4212 73.6735 96.0326 72.7347 96.7663 72C97.5 71.2245 98.3968 70.6531 99.4158 70.2449C100.435 69.8367 101.535 69.6735 102.677 69.6735C103.818 69.6735 104.022 69.7143 104.592 69.8367C105.163 69.9184 105.652 70.0408 106.101 70.1633C106.508 70.2857 106.875 70.449 107.16 70.5714C107.446 70.7347 107.649 70.8163 107.731 70.898L106.834 73.4286C106.427 73.1837 105.856 72.9388 105.122 72.7347C104.389 72.4898 103.614 72.4082 102.758 72.4082C101.902 72.4082 101.332 72.5306 100.679 72.8163C100.027 73.0612 99.4973 73.4286 99.0082 73.9592C98.5598 74.449 98.193 75.102 97.9076 75.8775C97.6631 76.6531 97.5 77.551 97.5 78.5714C97.5 79.5918 97.5815 80.2857 97.7854 81.0612C97.9892 81.8367 98.3152 82.4898 98.7636 83.0204C99.1712 83.551 99.7419 84 100.394 84.2857C101.046 84.5714 101.821 84.7347 102.758 84.7347C103.696 84.7347 104.755 84.6122 105.448 84.4082C106.141 84.1633 106.671 83.9592 107.038 83.7551L107.894 86.2857C107.69 86.4082 107.446 86.5306 107.079 86.6939C106.753 86.8163 106.345 86.9388 105.897 87.102C105.448 87.2245 104.919 87.3061 104.348 87.3878C103.777 87.4694 103.166 87.5102 102.514 87.5102V87.4694Z" fill="#F1B61E"/>
+<path d="M72.5136 78.5714C72.5136 79.5102 72.6359 80.3673 72.8397 81.1429C73.0842 81.9184 73.4103 82.5306 73.8179 83.102C74.2663 83.6327 74.7962 84.0408 75.4076 84.3265C76.019 84.6122 76.7527 84.7755 77.5272 84.7755C78.3016 84.7755 78.9946 84.6122 79.606 84.3265C80.2174 84.0408 80.7473 83.6327 81.1957 83.102C81.644 82.5714 81.9701 81.9184 82.2147 81.1429C82.4592 80.3673 82.5408 79.5102 82.5408 78.5714C82.5408 77.6326 82.4185 76.7755 82.2147 76.0408C81.9701 75.2653 81.644 74.6122 81.1957 74.0816C80.788 73.551 80.2582 73.102 79.606 72.8163C78.9946 72.5306 78.3016 72.3673 77.5272 72.3673C76.7527 72.3673 76.019 72.5306 75.4076 72.8163C74.7962 73.102 74.2663 73.551 73.8179 74.0816C73.4103 74.6122 73.0435 75.2653 72.8397 76.0408C72.5951 76.8163 72.5136 77.6326 72.5136 78.5714ZM85.8424 78.5714C85.8424 80.0408 85.6386 81.3061 85.1902 82.449C84.7826 83.551 84.1712 84.4898 83.4375 85.2653C82.7038 86 81.8478 86.5714 80.8288 86.9388C79.8098 87.3061 78.75 87.5102 77.6495 87.5102C76.5489 87.5102 75.4484 87.3061 74.4294 86.9388C73.4103 86.5714 72.5544 86 71.7799 85.2653C71.0462 84.5306 70.4348 83.5918 70.0272 82.449C69.5788 81.3469 69.375 80.0408 69.375 78.5714C69.375 77.102 69.5788 75.8367 70.0272 74.7347C70.4755 73.6327 71.087 72.6939 71.8207 71.9184C72.5951 71.1837 73.4918 70.6122 74.4701 70.2041C75.4891 69.8367 76.5082 69.6327 77.6495 69.6327C78.7908 69.6327 79.8098 69.8367 80.8288 70.2041C81.8478 70.5714 82.7038 71.1429 83.4375 71.9184C84.1712 72.6939 84.7826 73.5918 85.231 74.7347C85.6794 75.8367 85.8832 77.102 85.8832 78.5714H85.8424Z" fill="#F1B61E"/>
+<path d="M58.8995 76.898C59.3886 76.898 59.837 76.898 60.3261 76.8163C60.8152 76.7347 61.2228 76.6122 61.5897 76.4082C61.9565 76.2041 62.2826 75.9592 62.4864 75.6327C62.731 75.3061 62.8125 74.898 62.8125 74.4082C62.8125 73.9184 62.5272 73.2653 61.9973 72.898C61.4674 72.5306 60.7337 72.3265 59.7962 72.3265C58.8587 72.3265 58.0843 72.449 57.3913 72.6531C56.6984 72.8571 56.1277 73.102 55.6386 73.3878L54.6196 70.898C55.1495 70.5714 55.8424 70.2857 56.7391 70.0408C57.6766 69.7959 58.6549 69.6735 59.7962 69.6735C60.9375 69.6735 61.5082 69.7551 62.2419 69.9592C62.9756 70.1224 63.6277 70.4082 64.1984 70.8163C64.7283 71.2245 65.1767 71.7143 65.462 72.2857C65.7881 72.8571 65.9103 73.551 65.9103 74.3673C65.9103 75.1837 65.7065 75.7959 65.2989 76.449C64.8913 77.102 64.2799 77.5918 63.4239 77.9592C63.8723 78.1225 64.2799 78.3265 64.6875 78.5714C65.0951 78.8163 65.4212 79.102 65.7065 79.4694C65.9919 79.8367 66.2364 80.2449 66.3995 80.7347C66.5625 81.1837 66.6848 81.7143 66.6848 82.3265C66.6848 83.2653 66.5218 84.0408 66.1957 84.6939C65.8696 85.3469 65.4212 85.8776 64.8098 86.2857C64.1984 86.6939 63.4647 87.0204 62.568 87.1837C61.712 87.3878 60.7337 87.4694 59.6332 87.4694C58.5326 87.4694 58.4511 87.4286 57.8805 87.3469C57.3098 87.2653 56.7799 87.1429 56.2908 87.0204C55.8017 86.898 55.3533 86.7347 54.9457 86.6122C54.5381 86.449 54.212 86.2857 53.9674 86.1633L54.8642 83.6735C55.068 83.7551 55.3533 83.8776 55.6386 84C55.9647 84.1225 56.2908 84.2449 56.6984 84.3265C57.106 84.449 57.5136 84.5306 57.962 84.6122C58.4103 84.6939 58.8995 84.7347 59.3478 84.7347C60.6114 84.7347 61.5897 84.5306 62.2826 84.1633C62.9756 83.7551 63.3424 83.102 63.3424 82.1633C63.3424 81.2245 63.2201 81.1429 62.9756 80.7755C62.731 80.4082 62.4049 80.1225 61.9973 79.9184C61.5897 79.7143 61.1006 79.5918 60.5299 79.5102C59.9593 79.4286 59.3478 79.3878 58.6957 79.3878H56.7799V76.8163H58.7364L58.8995 76.898Z" fill="#F1B61E"/>
+<path d="M37.2962 87.102V70.0408H40.3532V81.3878C40.9239 80.4898 41.5353 79.551 42.2282 78.5306C42.9619 77.5102 43.6956 76.4898 44.4293 75.4694C45.2038 74.449 45.9782 73.4694 46.7119 72.5306C47.4456 71.5918 48.1793 70.7755 48.8315 70.0816H51.3587V87.1429H48.3016V74.9388C47.6087 75.7551 46.875 76.6939 46.1005 77.7143C45.3668 78.7347 44.5924 79.7959 43.8587 80.898C43.125 82 42.3913 83.0612 41.7391 84.1633C41.0462 85.2245 40.4348 86.2449 39.8641 87.1837H37.2147L37.2962 87.102Z" fill="#F1B61E"/>
+<path d="M25.5571 72.6939C25.5571 73.7959 25.4348 74.9388 25.394 76.1224C25.3125 77.2653 25.1902 78.4082 25.0272 79.4694C24.8641 80.5306 24.6196 81.551 24.2935 82.4898C23.9674 83.4286 23.519 84.2857 22.9484 85.0204C22.3777 85.7143 21.644 86.2857 20.788 86.7347C19.9321 87.1429 18.8723 87.3878 17.6495 87.4286L17.3234 84.7347C17.894 84.6531 18.4239 84.5714 18.8723 84.4082C19.3206 84.2449 19.6875 84.0408 20.0136 83.7551C20.3397 83.4694 20.625 83.1429 20.8696 82.7347C21.1141 82.3265 21.3179 81.8367 21.5217 81.3061C21.9701 80.0408 22.2554 78.4082 22.4185 76.4898C22.5815 74.5714 22.6223 72.4082 22.6223 70.0408H33.2609V87.102H30.1223V72.6939H25.5571Z" fill="#F1B61E"/>
+<path d="M6.60328 72.6531V76.2449H8.27447C9.4973 76.2449 10.5978 76.3265 11.5761 76.5306C12.5544 76.7347 13.3696 77.0612 14.0218 77.5102C14.6739 77.9184 15.2038 78.4898 15.5299 79.2245C15.8968 79.9184 16.0598 80.7755 16.0598 81.7551C16.0598 83.5918 15.4076 84.9796 14.0625 85.9184C12.7174 86.8163 10.8424 87.2653 8.356 87.2653C5.86958 87.2653 6.88861 87.2245 6.03263 87.1429C5.17665 87.0612 4.36143 86.9388 3.58698 86.7755V70.0408H14.5109V72.6939H6.60328V72.6531ZM7.70382 84.5714H9.08969C9.57882 84.5714 10.068 84.4898 10.5571 84.4082C11.0462 84.3265 11.4538 84.1633 11.7799 83.9592C12.1468 83.7551 12.4321 83.4694 12.6359 83.102C12.8397 82.7755 12.962 82.3265 12.962 81.7959C12.962 81.2653 12.8397 80.7347 12.6359 80.3265C12.4321 79.9184 12.106 79.6735 11.6984 79.4286C11.2908 79.1837 10.8016 79.0612 10.1902 78.9796C9.61958 78.898 8.96741 78.8163 8.23371 78.8163H6.64404V84.5306C6.80708 84.5306 6.92937 84.5306 7.09241 84.5714H7.70382Z" fill="#F1B61E"/>
+</g>
+<defs>
+<clipPath id="clip0_1660_4611">
+<rect width="150" height="120" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+      </div>
+      <div class="auth-left-title">Управлявайте вашия<br>автомобилен парк <em>умно</em></div>
+      <div class="auth-left-sub">Платформата за физически и юридически лица — следете прегледи, резервирайте часове и управлявайте целия флот от едно място.</div>
+      <div>
+        <div class="auth-feature"><div class="auth-feat-ic"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg></div>Управление на флот до 500+ МПС</div>
+        <div class="auth-feature"><div class="auth-feat-ic"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div>Автоматични известия за изтичащи срокове</div>
+        <div class="auth-feature"><div class="auth-feat-ic"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>Справки и отчети за разходи по МПС</div>
+        <div class="auth-feature"><div class="auth-feat-ic"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>Проследяване на съответствие и документи</div>
+        <div class="auth-feature"><div class="auth-feat-ic"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>Онлайн резервации с GTP.BG пунктове</div>
+      </div>
+      <div class="auth-left-footer" style="margin-top:28px">© 2026 Аутотест Груп · GTP.BG Fleet Platform</div>
+    </div>
+
+    <!-- Right form -->
+    <div class="auth-right">
+      <div class="auth-seg">
+        <button class="auth-seg-btn on" onclick="authTab('login',this)">Вход</button>
+        <button class="auth-seg-btn" onclick="authTab('reg',this)">Регистрация</button>
+      </div>
+
+      <div class="type-row">
+        <button class="type-btn on" id="tp-personal" onclick="authType('personal')">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Физическо лице
+        </button>
+        <button class="type-btn" id="tp-biz" onclick="authType('biz')">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+          Юридическо лице
+        </button>
+      </div>
+
+      <div id="form-login">
+        <div class="af"><div class="af-lbl">Имейл</div><input class="ai" type="email" placeholder="your@email.com"></div>
+        <div class="af"><div class="af-lbl">Парола</div><input class="ai" type="password" placeholder="••••••••"></div>
+        <div style="text-align:right;margin:-5px 0 14px"><span style="font-size:11px;color:var(--gold);cursor:pointer;font-weight:600">Забравена парола?</span></div>
+        <button class="a-submit" onclick="doLogin()">Влез в профила →</button>
+      </div>
+
+      <div id="form-reg" style="display:none">
+        <div id="biz-extra">
+          <div class="ag2">
+            <div class="af"><div class="af-lbl">Фирма</div><input class="ai" type="text" placeholder="Аутотест ООД"></div>
+            <div class="af"><div class="af-lbl">ЕИК / БУЛСТАТ</div><input class="ai" type="text" placeholder="123456789"></div>
+          </div>
+        </div>
+        <div class="ag2">
+          <div class="af"><div class="af-lbl">Имe</div><input class="ai" type="text" placeholder="Иван"></div>
+          <div class="af"><div class="af-lbl">Фамилия</div><input class="ai" type="text" placeholder="Иванов"></div>
+        </div>
+        <div class="af"><div class="af-lbl">Имейл</div><input class="ai" type="email" placeholder="your@email.com"></div>
+        <div class="af"><div class="af-lbl">Парола (мин. 6 символа)</div><input class="ai" type="password" placeholder="••••••••"></div>
+        <button class="a-submit" onclick="doLogin()">Създай акаунт →</button>
+      </div>
+
+      <div class="a-or"><hr><span>или продължи с</span><hr></div>
+      <div class="a-social">
+        <button class="a-soc-btn"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v2.97h3.86c2.26-2.09 3.56-5.17 3.56-8.79z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-2.97c-1.08.72-2.45 1.14-4.07 1.14-3.13 0-5.78-2.11-6.73-4.96H1.3v3.07C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.3c-.25-.72-.38-1.49-.38-2.3s.14-1.57.38-2.3V6.63H1.3C.47 8.24 0 10.06 0 12s.47 3.76 1.3 5.37l3.97-3.07z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.3 6.63l3.97 3.07C6.22 6.86 8.87 4.75 12 4.75z"/></svg>Google</button>
+        <button class="a-soc-btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="var(--text)"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>LinkedIn</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ APP ═══════════ -->
+<div id="app">
+  <!-- Sidebar -->
+  <aside class="sb" id="sb">
+    <div class="sb-logo">
+      <div style="width:90px"><svg width="110" height="88" viewBox="0 0 150 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_1660_4611)">
+<path d="M89.144 1.18367H51.3587V10.6939H64.2799V46.1633H76.1821V10.6939H89.1848V1.18367H89.144Z" fill="white"/>
+<path d="M23.3152 46.9388C18.6277 46.9388 14.4701 46.0816 10.9239 44.3265C7.33698 42.6122 4.606 40.0408 2.731 36.6122C0.815244 33.2245 -0.0814955 28.9796 2.62461e-05 23.9184C0.16307 18.8163 1.34514 14.4898 3.50546 10.9796C5.66579 7.46939 8.64133 4.81633 12.3913 3.02041C16.1821 1.26531 20.3805 0.367348 25.068 0.367348C32.0788 0.367348 37.3777 1.71429 40.9239 4.36735C44.4701 7.02041 46.875 10.898 48.0979 16.0408L36.644 17.7143C36.1957 15.8367 35.3397 14.4082 34.0354 13.4286C32.7718 12.449 31.3044 11.7551 29.7147 11.3878C28.0843 11.0204 26.5761 10.8163 25.1087 10.8163C20.3397 10.8163 16.9158 11.9592 14.837 14.2857C12.7582 16.6122 11.7392 19.5102 11.7799 23.0204C11.7799 27.3469 13.0843 30.5714 15.6522 32.7755C18.2201 34.9796 21.9294 36.0408 26.7392 36.0408C31.5489 36.0408 29.6332 35.8776 31.1413 35.5918C32.6495 35.3061 34.0761 34.7755 35.3805 34.0408C36.6848 33.3061 37.6631 32.2041 38.356 30.7755H30.6114V22.7755H49.0354V46.0816H41.1277L38.6006 40.3265H38.4375C37.9484 41.2245 37.2147 42.0816 36.2772 42.898C35.3397 43.6735 34.2392 44.3673 32.9756 44.9796C31.712 45.551 30.2446 46.0408 28.6549 46.3673C27.0245 46.6939 25.2718 46.898 23.356 46.898H23.3152V46.9388Z" fill="white"/>
+<path d="M121.671 1.30612H94.9321V38.3673C96.5625 37.102 98.6005 36.3673 100.842 36.3673C103.084 36.3673 105.122 37.102 106.753 38.3673V28.6122L121.671 28.5306C126.889 28.5306 139.158 26.6939 139.158 14.5306C139.158 2.36735 127.092 1.30612 121.671 1.30612ZM119.918 20.1633H106.753V10.2041H119.918C124.117 10.2041 128.519 10.7755 128.519 15.3061C128.519 19.8367 124.117 20.2041 119.918 20.2041V20.1633Z" fill="white"/>
+<path d="M111.603 51.102V33.5102H119.674C120.122 33.5102 120.652 33.5102 121.304 33.5102C121.957 33.5102 122.609 33.6327 123.302 33.7551C123.995 33.8776 124.647 34.1225 125.217 34.449C125.829 34.7755 126.318 35.2245 126.685 35.8367C127.052 36.4082 127.255 37.1837 127.255 38.0816C127.255 38.9796 127.133 39.3469 126.807 39.9184C126.522 40.4898 125.992 40.9388 125.258 41.3061C124.524 41.6735 123.424 41.8776 122.038 41.9592V42.0816C123.668 42.0816 124.891 42.3265 125.788 42.6939C126.685 43.0612 127.296 43.551 127.663 44.1633C128.03 44.7755 128.193 45.4286 128.193 46.2041C128.193 46.9796 127.989 47.9592 127.582 48.5714C127.174 49.1837 126.644 49.6735 125.992 50C125.34 50.3265 124.606 50.5714 123.872 50.7347C123.098 50.8571 122.364 50.9796 121.63 50.9796C120.897 50.9796 120.245 50.9796 119.674 50.9796H111.603V51.102ZM116.168 40.449H119.103C119.674 40.449 120.204 40.449 120.774 40.3673C121.345 40.3673 121.793 40.1633 122.16 39.9184C122.527 39.6735 122.731 39.2653 122.731 38.6939C122.731 38.1225 122.568 37.7143 122.201 37.5102C121.875 37.2653 121.427 37.1429 120.856 37.102C120.285 37.102 119.715 37.0204 119.103 37.0204H116.168V40.4082V40.449ZM116.168 47.6327H119.226C119.918 47.6327 120.611 47.6327 121.223 47.551C121.834 47.551 122.364 47.3469 122.772 47.0612C123.179 46.7755 123.383 46.3265 123.383 45.6327C123.383 44.9388 123.179 44.4898 122.813 44.2449C122.446 44 121.916 43.7959 121.304 43.7551C120.693 43.7143 120 43.6735 119.266 43.6735H116.209V47.6327H116.168Z" fill="white"/>
+<path d="M138.954 51.4286C137.12 51.4286 135.489 51.102 134.103 50.4082C132.717 49.7143 131.617 48.7347 130.883 47.3878C130.149 46.0408 129.783 44.4082 129.823 42.4082C129.905 40.4082 130.353 38.7347 131.209 37.3469C132.065 35.9592 133.207 34.9388 134.674 34.2449C136.141 33.551 137.772 33.1837 139.606 33.1837C142.337 33.1837 144.416 33.7143 145.802 34.7347C147.188 35.7959 148.125 37.3061 148.614 39.3061L144.13 39.9592C143.967 39.2245 143.601 38.6939 143.111 38.2857C142.622 37.9184 142.052 37.6327 141.399 37.4694C140.788 37.3469 140.177 37.2653 139.606 37.2653C137.731 37.2653 136.386 37.7143 135.571 38.6122C134.755 39.5102 134.348 40.6531 134.389 42.0408C134.389 43.7143 134.878 44.9796 135.897 45.8367C136.916 46.6939 138.342 47.102 140.217 47.102C142.092 47.102 141.359 47.102 141.929 46.9388C142.541 46.8163 143.071 46.6122 143.601 46.3265C144.09 46.0408 144.497 45.5918 144.742 45.0612H141.726V41.9592H148.94V51.0612H145.842L144.864 48.8163H144.783C144.579 49.1837 144.293 49.5102 143.927 49.7959C143.56 50.1224 143.111 50.3673 142.622 50.6122C142.133 50.8571 141.563 51.0204 140.91 51.1429C140.299 51.2653 139.565 51.3469 138.832 51.3469L138.954 51.4286Z" fill="white"/>
+<path d="M100.842 50.9388C103.492 50.9388 105.652 48.7755 105.652 46.1224C105.652 43.4694 103.492 41.3061 100.842 41.3061C98.193 41.3061 96.0327 43.4694 96.0327 46.1224C96.0327 48.7755 98.193 50.9388 100.842 50.9388Z" fill="#F1B61E"/>
+<path d="M132.351 115.347V98.2857H143.274V100.939H135.448V105.143H142.418V107.714H135.448V112.735H143.886V115.388H132.351V115.347Z" fill="#F1B61E"/>
+<path d="M114.334 98.2449C114.701 98.8571 115.109 99.6327 115.557 100.531C116.005 101.429 116.454 102.367 116.902 103.388C117.351 104.367 117.799 105.388 118.247 106.408C118.696 107.429 119.103 108.367 119.511 109.224C119.878 108.367 120.285 107.429 120.734 106.408C121.182 105.388 121.63 104.367 122.079 103.388C122.527 102.367 122.976 101.429 123.424 100.531C123.872 99.6327 124.28 98.8571 124.647 98.2449H127.459C127.622 99.5102 127.745 100.816 127.867 102.245C127.989 103.633 128.111 105.061 128.193 106.571C128.315 108.041 128.397 109.51 128.478 111.02C128.56 112.49 128.641 113.959 128.723 115.347H125.666C125.584 113.347 125.503 111.306 125.421 109.224C125.34 107.143 125.217 105.102 125.014 103.102C124.851 103.469 124.606 103.918 124.361 104.449C124.117 104.98 123.872 105.551 123.587 106.163C123.302 106.776 123.016 107.388 122.731 108.041C122.446 108.694 122.16 109.347 121.875 109.959C121.63 110.571 121.386 111.143 121.141 111.673C120.897 112.204 120.734 112.653 120.571 113.02H118.247C118.084 112.653 117.88 112.163 117.677 111.633C117.432 111.102 117.187 110.531 116.902 109.918C116.658 109.306 116.372 108.653 116.087 108C115.802 107.347 115.516 106.694 115.231 106.122C114.946 105.51 114.701 104.939 114.457 104.408C114.212 103.878 114.008 103.429 113.804 103.061C113.641 105.02 113.478 107.061 113.397 109.184C113.315 111.265 113.234 113.347 113.193 115.306H110.136C110.217 113.878 110.258 112.449 110.34 110.939C110.421 109.429 110.543 107.918 110.625 106.449C110.747 104.939 110.87 103.51 110.992 102.122C111.114 100.735 111.277 99.4286 111.399 98.2449H114.334Z" fill="#F1B61E"/>
+<path d="M102.514 115.714C101.25 115.714 100.109 115.51 99.0897 115.143C98.0707 114.735 97.2147 114.163 96.5218 113.429C95.8288 112.653 95.2582 111.714 94.8913 110.612C94.5245 109.51 94.3207 108.245 94.3207 106.816C94.3207 105.388 94.5245 104.122 94.9729 103.02C95.4212 101.918 96.0326 100.98 96.7663 100.245C97.5 99.4694 98.3968 98.898 99.4158 98.4898C100.435 98.0816 101.535 97.9184 102.677 97.9184C103.818 97.9184 104.022 97.9592 104.592 98.0816C105.163 98.1633 105.652 98.2857 106.101 98.4082C106.508 98.5306 106.875 98.6939 107.16 98.8163C107.446 98.9796 107.649 99.0612 107.731 99.1429L106.834 101.673C106.427 101.429 105.856 101.184 105.122 100.98C104.389 100.735 103.614 100.653 102.758 100.653C101.902 100.653 101.332 100.776 100.679 101.061C100.027 101.306 99.4973 101.673 99.0082 102.204C98.5598 102.694 98.193 103.347 97.9076 104.122C97.6631 104.898 97.5 105.796 97.5 106.816C97.5 107.837 97.5815 108.531 97.7854 109.306C97.9892 110.082 98.3152 110.735 98.7636 111.265C99.1712 111.796 99.7419 112.245 100.394 112.531C101.046 112.816 101.821 112.98 102.758 112.98C103.696 112.98 104.755 112.857 105.448 112.653C106.141 112.408 106.671 112.204 107.038 112L107.853 114.531C107.649 114.653 107.405 114.776 107.038 114.939C106.712 115.061 106.304 115.184 105.856 115.347C105.408 115.469 104.878 115.551 104.307 115.633C103.736 115.714 103.125 115.755 102.473 115.755H102.514V115.714Z" fill="#F1B61E"/>
+<path d="M76.7935 100.898V104.49H78.4647C79.6875 104.49 80.788 104.571 81.7663 104.776C82.7446 104.98 83.5598 105.306 84.2119 105.755C84.8641 106.163 85.394 106.735 85.7201 107.469C86.0869 108.163 86.25 109.02 86.25 110C86.25 111.837 85.5978 113.225 84.2527 114.163C82.9076 115.061 81.0326 115.51 78.5462 115.51C76.0598 115.51 77.0788 115.469 76.2228 115.388C75.3668 115.306 74.5516 115.184 73.7772 115.02V98.2857H84.7011V100.939H76.7935V100.898ZM77.8532 112.816H79.2391C79.7282 112.816 80.2174 112.735 80.7065 112.653C81.1956 112.571 81.6032 112.408 81.9293 112.204C82.2962 112 82.5815 111.714 82.7853 111.347C82.9891 111.02 83.1114 110.571 83.1114 110.041C83.1114 109.51 82.9891 108.98 82.7853 108.571C82.5815 108.204 82.2554 107.918 81.8478 107.673C81.4402 107.429 80.9511 107.306 80.3397 107.225C79.769 107.143 79.1168 107.061 78.3831 107.061H76.7935V112.776C76.9565 112.776 77.0788 112.776 77.2418 112.816H77.8532Z" fill="#F1B61E"/>
+<path d="M59.3478 115.347V98.2857H70.2717V100.939H62.4457V105.143H69.4158V107.714H62.4457V112.735H70.8832V115.388H59.3478V115.347Z" fill="#F1B61E"/>
+<path d="M56.9837 98.2449V100.939H51.7663V115.306H48.6277V100.939H43.4103V98.2449H56.9837Z" fill="#F1B61E"/>
+<path d="M22.7038 106.776C22.7038 107.714 22.8261 108.571 23.0299 109.347C23.2745 110.122 23.6006 110.735 24.0082 111.306C24.4565 111.837 24.9864 112.245 25.5978 112.531C26.2093 112.816 26.943 112.98 27.7174 112.98C28.4919 112.98 29.1848 112.816 29.7962 112.531C30.4076 112.245 30.9375 111.837 31.3859 111.306C31.8343 110.776 32.1603 110.122 32.4049 109.347C32.6495 108.571 32.731 107.714 32.731 106.776C32.731 105.837 32.6087 104.98 32.4049 104.245C32.1603 103.469 31.8343 102.816 31.3859 102.286C30.9783 101.755 30.4484 101.306 29.7962 101.02C29.144 100.735 28.4919 100.571 27.7174 100.571C26.943 100.571 26.2093 100.735 25.5978 101.02C24.9864 101.306 24.4565 101.755 24.0082 102.286C23.6006 102.816 23.2745 103.469 23.0299 104.245C22.7853 105.02 22.7038 105.837 22.7038 106.776ZM35.9919 106.776C35.9919 108.245 35.7881 109.51 35.3397 110.653C34.9321 111.755 34.3207 112.694 33.587 113.469C32.8533 114.204 31.9973 114.776 30.9783 115.143C29.9593 115.51 28.8995 115.714 27.7989 115.714C26.6984 115.714 25.5978 115.51 24.5788 115.143C23.5598 114.776 22.7038 114.204 21.9294 113.469C21.1957 112.694 20.5843 111.796 20.1766 110.653C19.7283 109.551 19.5245 108.245 19.5245 106.776C19.5245 105.306 19.7283 104.041 20.1766 102.939C20.625 101.837 21.2364 100.898 21.9701 100.122C22.7446 99.3469 23.6413 98.8163 24.6196 98.4082C25.6386 98.0408 26.6576 97.8367 27.7989 97.8367C28.9402 97.8367 29.9593 98.0408 30.9783 98.4082C31.9973 98.7755 32.8533 99.3469 33.587 100.122C34.3207 100.898 34.9321 101.796 35.3805 102.939C35.8288 104.041 36.0326 105.306 36.0326 106.776H35.9919Z" fill="#F1B61E"/>
+<path d="M0 112.694H2.11957C2.85326 111.673 3.42391 110.612 3.83152 109.51C4.23913 108.367 4.52446 107.224 4.72826 106C4.93207 104.776 5.05435 103.551 5.05435 102.245C5.05435 100.939 5.09511 99.6327 5.09511 98.2449H15.5299V112.694H18.0571V119.878H15.0815V115.306H3.0163V119.878H0V112.694ZM8.11141 100.898C8.07065 101.878 7.98913 102.898 7.94837 103.918C7.86685 104.939 7.74457 105.959 7.58152 106.98C7.41848 108 7.17391 108.98 6.88859 109.918C6.5625 110.857 6.15489 111.755 5.625 112.612H12.5951V100.857H8.11141V100.898Z" fill="#F1B61E"/>
+<path d="M149.878 83.8367C149.878 84.1224 149.918 84.3265 149.918 84.449V84.8571C149.918 85.8776 149.755 86.9388 149.429 88C149.103 89.102 148.696 90.1225 148.084 91.0612L145.761 90.4082C146.168 89.4694 146.413 88.5306 146.535 87.5918C146.698 86.6939 146.739 85.8776 146.739 85.1837V83.7959H149.878V83.8367Z" fill="#F1B61E"/>
+<path d="M132.351 87.102V70.0408H143.274V72.6939H135.448V76.898H142.418V79.4694H135.448V84.4898H143.886V87.1429H132.351V87.102Z" fill="#F1B61E"/>
+<path d="M114.334 70.0408C114.701 70.6531 115.109 71.4286 115.557 72.3265C116.005 73.2245 116.454 74.1633 116.902 75.1837C117.351 76.1633 117.799 77.1837 118.247 78.2041C118.696 79.2245 119.144 80.1633 119.511 81.0204C119.878 80.1633 120.285 79.2245 120.734 78.2041C121.182 77.1837 121.63 76.1633 122.079 75.1837C122.527 74.1633 122.976 73.2245 123.424 72.3265C123.872 71.4286 124.28 70.6531 124.647 70.0408H127.459C127.622 71.3061 127.745 72.6122 127.867 74.0408C127.989 75.4286 128.111 76.8571 128.193 78.3673C128.315 79.8367 128.397 81.3061 128.478 82.8163C128.56 84.2857 128.641 85.7551 128.723 87.1429H125.666C125.584 85.1429 125.503 83.102 125.421 81.0204C125.34 78.9388 125.217 76.898 125.014 74.898C124.851 75.2653 124.606 75.7143 124.361 76.2449C124.117 76.7755 123.872 77.3469 123.587 77.9592C123.302 78.5714 123.016 79.1837 122.731 79.8367C122.446 80.4898 122.16 81.1429 121.916 81.7551C121.671 82.3673 121.427 82.9388 121.182 83.4694C120.938 84 120.774 84.449 120.611 84.8163H118.288C118.125 84.449 117.921 83.9592 117.717 83.4286C117.473 82.898 117.228 82.3265 116.943 81.7143C116.698 81.102 116.413 80.449 116.087 79.7959C115.802 79.1429 115.516 78.4898 115.272 77.9184C114.986 77.3061 114.742 76.7347 114.497 76.2041C114.253 75.6735 114.049 75.2245 113.845 74.8571C113.682 76.8163 113.519 78.8571 113.438 80.9796C113.356 83.0612 113.274 85.1429 113.234 87.102H110.177C110.258 85.6735 110.299 84.2449 110.38 82.7347C110.462 81.2245 110.584 79.7143 110.666 78.2449C110.788 76.7347 110.91 75.3061 111.033 73.9184C111.155 72.5306 111.318 71.2245 111.44 70.0408H114.334Z" fill="#F1B61E"/>
+<path d="M102.514 87.4694C101.25 87.4694 100.109 87.2653 99.0897 86.898C98.0707 86.4898 97.2147 85.9184 96.5218 85.1837C95.8288 84.4082 95.2582 83.4694 94.8913 82.3673C94.5245 81.2653 94.3207 80 94.3207 78.5714C94.3207 77.1429 94.5245 75.8776 94.9729 74.7755C95.4212 73.6735 96.0326 72.7347 96.7663 72C97.5 71.2245 98.3968 70.6531 99.4158 70.2449C100.435 69.8367 101.535 69.6735 102.677 69.6735C103.818 69.6735 104.022 69.7143 104.592 69.8367C105.163 69.9184 105.652 70.0408 106.101 70.1633C106.508 70.2857 106.875 70.449 107.16 70.5714C107.446 70.7347 107.649 70.8163 107.731 70.898L106.834 73.4286C106.427 73.1837 105.856 72.9388 105.122 72.7347C104.389 72.4898 103.614 72.4082 102.758 72.4082C101.902 72.4082 101.332 72.5306 100.679 72.8163C100.027 73.0612 99.4973 73.4286 99.0082 73.9592C98.5598 74.449 98.193 75.102 97.9076 75.8775C97.6631 76.6531 97.5 77.551 97.5 78.5714C97.5 79.5918 97.5815 80.2857 97.7854 81.0612C97.9892 81.8367 98.3152 82.4898 98.7636 83.0204C99.1712 83.551 99.7419 84 100.394 84.2857C101.046 84.5714 101.821 84.7347 102.758 84.7347C103.696 84.7347 104.755 84.6122 105.448 84.4082C106.141 84.1633 106.671 83.9592 107.038 83.7551L107.894 86.2857C107.69 86.4082 107.446 86.5306 107.079 86.6939C106.753 86.8163 106.345 86.9388 105.897 87.102C105.448 87.2245 104.919 87.3061 104.348 87.3878C103.777 87.4694 103.166 87.5102 102.514 87.5102V87.4694Z" fill="#F1B61E"/>
+<path d="M72.5136 78.5714C72.5136 79.5102 72.6359 80.3673 72.8397 81.1429C73.0842 81.9184 73.4103 82.5306 73.8179 83.102C74.2663 83.6327 74.7962 84.0408 75.4076 84.3265C76.019 84.6122 76.7527 84.7755 77.5272 84.7755C78.3016 84.7755 78.9946 84.6122 79.606 84.3265C80.2174 84.0408 80.7473 83.6327 81.1957 83.102C81.644 82.5714 81.9701 81.9184 82.2147 81.1429C82.4592 80.3673 82.5408 79.5102 82.5408 78.5714C82.5408 77.6326 82.4185 76.7755 82.2147 76.0408C81.9701 75.2653 81.644 74.6122 81.1957 74.0816C80.788 73.551 80.2582 73.102 79.606 72.8163C78.9946 72.5306 78.3016 72.3673 77.5272 72.3673C76.7527 72.3673 76.019 72.5306 75.4076 72.8163C74.7962 73.102 74.2663 73.551 73.8179 74.0816C73.4103 74.6122 73.0435 75.2653 72.8397 76.0408C72.5951 76.8163 72.5136 77.6326 72.5136 78.5714ZM85.8424 78.5714C85.8424 80.0408 85.6386 81.3061 85.1902 82.449C84.7826 83.551 84.1712 84.4898 83.4375 85.2653C82.7038 86 81.8478 86.5714 80.8288 86.9388C79.8098 87.3061 78.75 87.5102 77.6495 87.5102C76.5489 87.5102 75.4484 87.3061 74.4294 86.9388C73.4103 86.5714 72.5544 86 71.7799 85.2653C71.0462 84.5306 70.4348 83.5918 70.0272 82.449C69.5788 81.3469 69.375 80.0408 69.375 78.5714C69.375 77.102 69.5788 75.8367 70.0272 74.7347C70.4755 73.6327 71.087 72.6939 71.8207 71.9184C72.5951 71.1837 73.4918 70.6122 74.4701 70.2041C75.4891 69.8367 76.5082 69.6327 77.6495 69.6327C78.7908 69.6327 79.8098 69.8367 80.8288 70.2041C81.8478 70.5714 82.7038 71.1429 83.4375 71.9184C84.1712 72.6939 84.7826 73.5918 85.231 74.7347C85.6794 75.8367 85.8832 77.102 85.8832 78.5714H85.8424Z" fill="#F1B61E"/>
+<path d="M58.8995 76.898C59.3886 76.898 59.837 76.898 60.3261 76.8163C60.8152 76.7347 61.2228 76.6122 61.5897 76.4082C61.9565 76.2041 62.2826 75.9592 62.4864 75.6327C62.731 75.3061 62.8125 74.898 62.8125 74.4082C62.8125 73.9184 62.5272 73.2653 61.9973 72.898C61.4674 72.5306 60.7337 72.3265 59.7962 72.3265C58.8587 72.3265 58.0843 72.449 57.3913 72.6531C56.6984 72.8571 56.1277 73.102 55.6386 73.3878L54.6196 70.898C55.1495 70.5714 55.8424 70.2857 56.7391 70.0408C57.6766 69.7959 58.6549 69.6735 59.7962 69.6735C60.9375 69.6735 61.5082 69.7551 62.2419 69.9592C62.9756 70.1224 63.6277 70.4082 64.1984 70.8163C64.7283 71.2245 65.1767 71.7143 65.462 72.2857C65.7881 72.8571 65.9103 73.551 65.9103 74.3673C65.9103 75.1837 65.7065 75.7959 65.2989 76.449C64.8913 77.102 64.2799 77.5918 63.4239 77.9592C63.8723 78.1225 64.2799 78.3265 64.6875 78.5714C65.0951 78.8163 65.4212 79.102 65.7065 79.4694C65.9919 79.8367 66.2364 80.2449 66.3995 80.7347C66.5625 81.1837 66.6848 81.7143 66.6848 82.3265C66.6848 83.2653 66.5218 84.0408 66.1957 84.6939C65.8696 85.3469 65.4212 85.8776 64.8098 86.2857C64.1984 86.6939 63.4647 87.0204 62.568 87.1837C61.712 87.3878 60.7337 87.4694 59.6332 87.4694C58.5326 87.4694 58.4511 87.4286 57.8805 87.3469C57.3098 87.2653 56.7799 87.1429 56.2908 87.0204C55.8017 86.898 55.3533 86.7347 54.9457 86.6122C54.5381 86.449 54.212 86.2857 53.9674 86.1633L54.8642 83.6735C55.068 83.7551 55.3533 83.8776 55.6386 84C55.9647 84.1225 56.2908 84.2449 56.6984 84.3265C57.106 84.449 57.5136 84.5306 57.962 84.6122C58.4103 84.6939 58.8995 84.7347 59.3478 84.7347C60.6114 84.7347 61.5897 84.5306 62.2826 84.1633C62.9756 83.7551 63.3424 83.102 63.3424 82.1633C63.3424 81.2245 63.2201 81.1429 62.9756 80.7755C62.731 80.4082 62.4049 80.1225 61.9973 79.9184C61.5897 79.7143 61.1006 79.5918 60.5299 79.5102C59.9593 79.4286 59.3478 79.3878 58.6957 79.3878H56.7799V76.8163H58.7364L58.8995 76.898Z" fill="#F1B61E"/>
+<path d="M37.2962 87.102V70.0408H40.3532V81.3878C40.9239 80.4898 41.5353 79.551 42.2282 78.5306C42.9619 77.5102 43.6956 76.4898 44.4293 75.4694C45.2038 74.449 45.9782 73.4694 46.7119 72.5306C47.4456 71.5918 48.1793 70.7755 48.8315 70.0816H51.3587V87.1429H48.3016V74.9388C47.6087 75.7551 46.875 76.6939 46.1005 77.7143C45.3668 78.7347 44.5924 79.7959 43.8587 80.898C43.125 82 42.3913 83.0612 41.7391 84.1633C41.0462 85.2245 40.4348 86.2449 39.8641 87.1837H37.2147L37.2962 87.102Z" fill="#F1B61E"/>
+<path d="M25.5571 72.6939C25.5571 73.7959 25.4348 74.9388 25.394 76.1224C25.3125 77.2653 25.1902 78.4082 25.0272 79.4694C24.8641 80.5306 24.6196 81.551 24.2935 82.4898C23.9674 83.4286 23.519 84.2857 22.9484 85.0204C22.3777 85.7143 21.644 86.2857 20.788 86.7347C19.9321 87.1429 18.8723 87.3878 17.6495 87.4286L17.3234 84.7347C17.894 84.6531 18.4239 84.5714 18.8723 84.4082C19.3206 84.2449 19.6875 84.0408 20.0136 83.7551C20.3397 83.4694 20.625 83.1429 20.8696 82.7347C21.1141 82.3265 21.3179 81.8367 21.5217 81.3061C21.9701 80.0408 22.2554 78.4082 22.4185 76.4898C22.5815 74.5714 22.6223 72.4082 22.6223 70.0408H33.2609V87.102H30.1223V72.6939H25.5571Z" fill="#F1B61E"/>
+<path d="M6.60328 72.6531V76.2449H8.27447C9.4973 76.2449 10.5978 76.3265 11.5761 76.5306C12.5544 76.7347 13.3696 77.0612 14.0218 77.5102C14.6739 77.9184 15.2038 78.4898 15.5299 79.2245C15.8968 79.9184 16.0598 80.7755 16.0598 81.7551C16.0598 83.5918 15.4076 84.9796 14.0625 85.9184C12.7174 86.8163 10.8424 87.2653 8.356 87.2653C5.86958 87.2653 6.88861 87.2245 6.03263 87.1429C5.17665 87.0612 4.36143 86.9388 3.58698 86.7755V70.0408H14.5109V72.6939H6.60328V72.6531ZM7.70382 84.5714H9.08969C9.57882 84.5714 10.068 84.4898 10.5571 84.4082C11.0462 84.3265 11.4538 84.1633 11.7799 83.9592C12.1468 83.7551 12.4321 83.4694 12.6359 83.102C12.8397 82.7755 12.962 82.3265 12.962 81.7959C12.962 81.2653 12.8397 80.7347 12.6359 80.3265C12.4321 79.9184 12.106 79.6735 11.6984 79.4286C11.2908 79.1837 10.8016 79.0612 10.1902 78.9796C9.61958 78.898 8.96741 78.8163 8.23371 78.8163H6.64404V84.5306C6.80708 84.5306 6.92937 84.5306 7.09241 84.5714H7.70382Z" fill="#F1B61E"/>
+</g>
+<defs>
+<clipPath id="clip0_1660_4611">
+<rect width="110" height="88" fill="white"/>
+</clipPath>
+</defs>
+</svg></div>
+      <span class="sb-plan" id="sb-plan">BASIC</span>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Основни</div>
+      <a class="ni on" onclick="nav('dashboard',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Табло</a>
+      <a class="ni" onclick="nav('fleet',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg>Автомобилен парк</a>
+      <a class="ni" onclick="nav('bookings',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Резервации</a>
+      <a class="ni" onclick="nav('compliance',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Съответствие<span class="ni-badge">3</span></a>
+      <a class="ni" onclick="nav('stations',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Пунктове</a>
+      <div class="sb-sec">Анализи</div>
+      <a class="ni" onclick="nav('reports',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Справки</a>
+      <a class="ni" onclick="nav('costs',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Разходи</a>
+      <div class="sb-sec">Управление</div>
+      <a class="ni" onclick="nav('users',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Потребители</a>
+      <a class="ni" onclick="nav('notifpage',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Известия<span class="ni-badge">5</span></a>
+      <a class="ni" onclick="nav('service',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>Обслужване</a>
+      <a class="ni" onclick="nav('settings',this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Настройки</a>
+    </nav>
+    <div class="sb-foot">
+      <div class="uc" onclick="nav('settings',null)">
+        <div class="ua">👤</div>
+        <div><div class="u-name" id="u-name">Иван Иванов</div><div class="u-role" id="u-role">Администратор</div></div>
+        <span class="u-plan" id="u-plan">BASIC</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title" id="tb-title">Табло</div>
+      <div class="tb-search"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--text3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Търси МПС, резервации..."></div>
+      <div class="tb-icon-btn" onclick="nav('notifpage',null)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><div class="tb-dot"></div></div>
+      <button class="btn-s" onclick="openModal('m-vehicle')"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Добави МПС</button>
+      <button class="btn-g" onclick="openModal('m-booking')"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Запази час</button>
+    </div>
+    <div class="content" id="content">
+
+<!-- ════ DASHBOARD ════ -->
+<div class="pg on" id="pg-dashboard">
+  <div class="sg sg-4">
+    <div class="sc"><div class="sc-hd"><div class="sc-ic" style="background:rgba(13,36,97,0.5)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--gold)" stroke-width="1.8" stroke-linecap="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg></div><span class="sc-trend up">▲ 2 <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span></div><div class="sv">14</div><div class="sl">Активни МПС</div><div class="pbar"><div class="pf pf-ok" style="width:93%"></div></div></div>
+    <div class="sc"><div class="sc-hd"><div class="sc-ic" style="background:rgba(29,184,122,0.1)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><span class="sc-trend up">▲ 3</span></div><div class="sv">7</div><div class="sl">Предстоящи прегледи</div><div class="pbar"><div class="pf" style="width:50%"></div></div></div>
+    <div class="sc"><div class="sc-hd"><div class="sc-ic" style="background:rgba(217,79,79,0.1)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--err)" stroke-width="1.8" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><span class="sc-trend dn">▼ 1</span></div><div class="sv">3</div><div class="sl">Изтекли срокове</div><div class="pbar"><div class="pf pf-er" style="width:21%"></div></div></div>
+    <div class="sc"><div class="sc-hd"><div class="sc-ic" style="background:rgba(240,180,41,0.1)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--gold)" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><span class="sc-trend up">▲ 8%</span></div><div class="sv">2 840</div><div class="sl">Разходи (лв) / месец</div><div class="pbar"><div class="pf pf-w" style="width:71%"></div></div></div>
+  </div>
+
+  <div class="sg sg-62">
+    <!-- Spend chart -->
+    <div class="c">
+      <div class="ch"><span class="ch-t">Разходи по месеци (лв)</span>
+        <select style="background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:10.5px;color:var(--text2);outline:none">
+          <option>2026</option><option>2025</option>
+        </select>
+      </div>
+      <div class="cb" style="padding:14px 18px 8px">
+        <svg class="chart-svg" viewBox="0 0 480 140" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FFD166"/>
+              <stop offset="100%" stop-color="#C88A00"/>
+            </linearGradient>
+            <linearGradient id="barGradHi" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FFD166" stop-opacity="1"/>
+              <stop offset="100%" stop-color="#F0B429" stop-opacity="0.9"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid lines -->
+          <line x1="0" y1="110" x2="480" y2="110" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="0" y1="82" x2="480" y2="82" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="0" y1="54" x2="480" y2="54" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="0" y1="26" x2="480" y2="26" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <!-- Bars: h = val/max * 100 where max ~3600; bar height max = 100, y = 110 - h -->
+          <g class="chart-bar-col"><rect x="4"   y="50" width="28" height="60" rx="3" fill="url(#barGrad)"/><text x="18"  y="122" text-anchor="middle" class="chart-axis-lbl">Яну</text></g>
+          <g class="chart-bar-col"><rect x="44"  y="38" width="28" height="72" rx="3" fill="url(#barGrad)"/><text x="58"  y="122" text-anchor="middle" class="chart-axis-lbl">Фев</text></g>
+          <g class="chart-bar-col"><rect x="84"  y="62" width="28" height="48" rx="3" fill="url(#barGrad)"/><text x="98"  y="122" text-anchor="middle" class="chart-axis-lbl">Мар</text></g>
+          <g class="chart-bar-col"><rect x="124" y="24" width="28" height="86" rx="3" fill="url(#barGrad)"/><text x="138" y="122" text-anchor="middle" class="chart-axis-lbl">Апр</text></g>
+          <g class="chart-bar-col"><rect x="164" y="44" width="28" height="66" rx="3" fill="url(#barGrad)"/><text x="178" y="122" text-anchor="middle" class="chart-axis-lbl">Май</text></g>
+          <g class="chart-bar-col"><rect x="204" y="34" width="28" height="76" rx="3" fill="url(#barGrad)"/><text x="218" y="122" text-anchor="middle" class="chart-axis-lbl">Юни</text></g>
+          <g class="chart-bar-col"><rect x="244" y="68" width="28" height="42" rx="3" fill="url(#barGrad)"/><text x="258" y="122" text-anchor="middle" class="chart-axis-lbl">Юли</text></g>
+          <g class="chart-bar-col"><rect x="284" y="18" width="28" height="92" rx="3" fill="url(#barGrad)"/><text x="298" y="122" text-anchor="middle" class="chart-axis-lbl">Авг</text></g>
+          <g class="chart-bar-col"><rect x="324" y="54" width="28" height="56" rx="3" fill="url(#barGrad)"/><text x="338" y="122" text-anchor="middle" class="chart-axis-lbl">Сеп</text></g>
+          <g class="chart-bar-col"><rect x="364" y="40" width="28" height="70" rx="3" fill="url(#barGrad)"/><text x="378" y="122" text-anchor="middle" class="chart-axis-lbl">Окт</text></g>
+          <g class="chart-bar-col"><rect x="404" y="30" width="28" height="80" rx="3" fill="url(#barGrad)"/><text x="418" y="122" text-anchor="middle" class="chart-axis-lbl">Ное</text></g>
+          <g class="chart-bar-col"><rect x="444" y="8"  width="28" height="102" rx="3" fill="url(#barGradHi)" filter="url(#glow)"/><text x="458" y="122" text-anchor="middle" class="chart-axis-lbl" style="fill:var(--gold);font-weight:700">Дек</text></g>
+          <!-- Y labels -->
+          <text x="-2" y="114" text-anchor="end" class="chart-axis-lbl">0</text>
+          <text x="-2" y="86"  text-anchor="end" class="chart-axis-lbl">1к</text>
+          <text x="-2" y="58"  text-anchor="end" class="chart-axis-lbl">2к</text>
+          <text x="-2" y="30"  text-anchor="end" class="chart-axis-lbl">3к</text>
+        </svg>
+      </div>
+    </div>
+    <!-- Compliance gauges -->
+    <div class="c">
+      <div class="ch"><span class="ch-t">Съответствие на флота</span><span class="ch-l" onclick="nav('compliance',null)">Детайли →</span></div>
+      <div class="cb">
+        <div class="gauge-r"><span class="gauge-lbl">ГТП прегледи</span><div class="gauge-bar"><div class="pf pf-ok" style="width:86%"></div></div><span class="gauge-pct" style="color:var(--ok)">86%</span></div>
+        <div class="gauge-r"><span class="gauge-lbl">Гражданска отг.</span><div class="gauge-bar"><div class="pf pf-ok" style="width:100%"></div></div><span class="gauge-pct" style="color:var(--ok)">100%</span></div>
+        <div class="gauge-r"><span class="gauge-lbl">Винетки</span><div class="gauge-bar"><div class="pf" style="width:79%"></div></div><span class="gauge-pct">79%</span></div>
+        <div class="gauge-r"><span class="gauge-lbl">Технически прегл.</span><div class="gauge-bar"><div class="pf pf-er" style="width:57%"></div></div><span class="gauge-pct" style="color:var(--err)">57%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upcoming inspections table -->
+  <div class="c">
+    <div class="ch"><span class="ch-t">Предстоящи прегледи</span><span class="ch-l" onclick="nav('bookings',null)">Виж всички →</span></div>
+    <div style="overflow-x:auto">
+    <table class="dt">
+      <thead><tr><th>МПС</th><th>Рег. №</th><th>Тип</th><th>Дата</th><th>Пункт</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="tb">BMW X5</td><td><span class="plate">СА·1234·АВ</span></td><td>ГТП</td><td>18.04.2026</td><td>ГТП Витоша</td><td><span class="badge b-ok"><span class="b-dot"></span>Запазен</span></td><td><button class="ab ab-g">Промени</button></td></tr>
+        <tr><td class="tb">Toyota Corolla</td><td><span class="plate">СА·5678·ВГ</span></td><td>ГТП</td><td>22.04.2026</td><td>ГТП Люлин</td><td><span class="badge b-ok"><span class="b-dot"></span>Запазен</span></td><td><button class="ab ab-g">Промени</button></td></tr>
+        <tr><td class="tb">Mercedes Sprinter</td><td><span class="plate">СА·9012·ДЕ</span></td><td>ГТП Кат.C</td><td>25.04.2026</td><td>ГТП В.Търново</td><td><span class="badge b-w"><span class="b-dot"></span>Потвърди</span></td><td><button class="ab ab-g">Потвърди</button></td></tr>
+        <tr><td class="tb">VW Golf</td><td><span class="plate">ПВ·3456·ЖЗ</span></td><td>Емисии</td><td>01.05.2026</td><td>—</td><td><span class="badge b-er"><span class="b-dot"></span>Незапазен</span></td><td><button class="ab" onclick="openModal('m-booking')">Запази</button></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════ FLEET ════ -->
+<div class="pg" id="pg-fleet">
+  <div class="sec-row">
+    <div class="sec-title">14 активни МПС в системата</div>
+    <div style="display:flex;gap:10px">
+      <select class="btn-s" style="cursor:pointer"><option>Всички категории</option><option>Лек автомобил (B)</option><option>Товарен (C)</option><option>Мотоциклет (A)</option></select>
+      <button class="btn-g" onclick="openModal('m-vehicle')"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Добави МПС</button>
+    </div>
+  </div>
+  <div class="sg sg-auto">
+    <div class="vc"><div class="vc-hd"><div class="vc-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg></div><div><div class="vc-nm">BMW X5</div><div class="vc-yr">2022 · Бензин</div></div><span class="plate" style="margin-left:auto">СА·1234·АВ</span></div><div class="vc-stats"><div class="vc-st"><div class="vc-sv" style="color:var(--ok)">Валиден</div><div class="vc-sl">ГТП</div></div><div class="vc-st"><div class="vc-sv" style="color:var(--warn)">14 дни</div><div class="vc-sl">ГО изтича</div></div><div class="vc-st"><div class="vc-sv">Актив.</div><div class="vc-sl">Винетка</div></div></div><div class="vc-ft"><div><span class="tag tag-g">Приоритет</span>&nbsp;<span class="tag">Кат. B</span></div><button class="ab ab-g" onclick="event.stopPropagation();openModal('m-booking')">Запази →</button></div></div>
+    <div class="vc"><div class="vc-hd"><div class="vc-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--text2)" stroke-width="1.5" stroke-linecap="round"><path d="M1 3h15l4 8H1z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="15.5" cy="18.5" r="2.5"/><path d="M20 11h2v7a1 1 0 01-1 1h-1"/></svg></div><div><div class="vc-nm">Mercedes Sprinter</div><div class="vc-yr">2021 · Дизел</div></div><span class="plate" style="margin-left:auto">СА·9012·ДЕ</span></div><div class="vc-stats"><div class="vc-st"><div class="vc-sv" style="color:var(--warn)">Скоро</div><div class="vc-sl">ГТП</div></div><div class="vc-st"><div class="vc-sv" style="color:var(--ok)">Валид.</div><div class="vc-sl">ГО</div></div><div class="vc-st"><div class="vc-sv">Актив.</div><div class="vc-sl">Винетка</div></div></div><div class="vc-ft"><span class="tag">Кат. C</span><button class="ab ab-g" onclick="event.stopPropagation();openModal('m-booking')">Запази →</button></div></div>
+    <div class="vc"><div class="vc-hd"><div class="vc-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--ok)" stroke-width="1.5" stroke-linecap="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg></div><div><div class="vc-nm">Toyota Corolla</div><div class="vc-yr">2023 · Хибрид</div></div><span class="plate" style="margin-left:auto">СА·5678·ВГ</span></div><div class="vc-stats"><div class="vc-st"><div class="vc-sv" style="color:var(--ok)">Валиден</div><div class="vc-sl">ГТП</div></div><div class="vc-st"><div class="vc-sv" style="color:var(--ok)">Валид.</div><div class="vc-sl">ГО</div></div><div class="vc-st"><div class="vc-sv">Актив.</div><div class="vc-sl">Винетка</div></div></div><div class="vc-ft"><span class="tag">Кат. B</span>&nbsp;<span class="tag" style="color:var(--ok);border-color:rgba(29,184,122,0.25)">Хибрид</span><button class="ab ab-g" onclick="event.stopPropagation();openModal('m-booking')">Запази →</button></div></div>
+    <div class="vc" style="border-color:rgba(217,79,79,0.25)"><div class="vc-hd"><div class="vc-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--err)" stroke-width="1.5" stroke-linecap="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg></div><div><div class="vc-nm">VW Golf</div><div class="vc-yr">2019 · Дизел</div></div><span class="plate" style="margin-left:auto">ПВ·3456·ЖЗ</span></div><div class="vc-stats"><div class="vc-st"><div class="vc-sv" style="color:var(--err)">Изтекъл</div><div class="vc-sl">ГТП</div></div><div class="vc-st"><div class="vc-sv" style="color:var(--ok)">Валид.</div><div class="vc-sl">ГО</div></div><div class="vc-st"><div class="vc-sv" style="color:var(--err)">Изтекла</div><div class="vc-sl">Винетка</div></div></div><div class="vc-ft"><span class="badge b-er" style="font-size:9px"><span class="b-dot"></span>Изисква действие</span><button class="ab" style="border-color:rgba(217,79,79,0.3);color:var(--err)" onclick="event.stopPropagation();openModal('m-booking')">Запази →</button></div></div>
+    <div class="vc" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:170px" onclick="openModal('m-vehicle')"><div class="empty-card"><div class="empty-card-ic">+</div><div class="empty-card-t">Добави ново МПС</div></div></div>
+  </div>
+</div>
+
+<!-- ════ BOOKINGS ════ -->
+<div class="pg" id="pg-bookings">
+  <div class="sec-row">
+    <div style="display:flex;gap:8px"><button class="btn-s" style="border-color:var(--gold);color:var(--gold)">Предстоящи</button><button class="btn-s">Минали</button><button class="btn-s">Всички</button></div>
+    <button class="btn-g" onclick="openModal('m-booking')">+ Нова резервация</button>
+  </div>
+  <div class="c" style="overflow-x:auto">
+    <table class="dt">
+      <thead><tr><th>#</th><th>МПС</th><th>Услуга</th><th>Пункт</th><th>Дата</th><th>Час</th><th>Статус</th><th>Сума</th><th></th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--text3)">#2840</td><td class="tb">BMW X5</td><td>ГТП</td><td>ГТП Витоша</td><td>18.04.2026</td><td style="font-family:'Ubuntu Mono',monospace">09:30</td><td><span class="badge b-ok"><span class="b-dot"></span>Потвърден</span></td><td class="tb">35 лв</td><td><button class="ab">Детайли</button></td></tr>
+        <tr><td style="color:var(--text3)">#2841</td><td class="tb">Toyota Corolla</td><td>ГТП</td><td>ГТП Люлин</td><td>22.04.2026</td><td style="font-family:'Ubuntu Mono',monospace">11:00</td><td><span class="badge b-ok"><span class="b-dot"></span>Потвърден</span></td><td class="tb">35 лв</td><td><button class="ab">Детайли</button></td></tr>
+        <tr><td style="color:var(--text3)">#2842</td><td class="tb">Mercedes Sprinter</td><td>ГТП Кат. C</td><td>ГТП В.Търново</td><td>25.04.2026</td><td style="font-family:'Ubuntu Mono',monospace">08:00</td><td><span class="badge b-w"><span class="b-dot"></span>Изчакващ</span></td><td class="tb">65 лв</td><td><button class="ab ab-g">Потвърди</button></td></tr>
+        <tr><td style="color:var(--text3)">#2839</td><td class="tb">VW Golf</td><td>ГТП + Емисии</td><td>ГТП Люлин</td><td>12.03.2026</td><td style="font-family:'Ubuntu Mono',monospace">14:30</td><td><span class="badge b-er"><span class="b-dot"></span>Анулиран</span></td><td class="tb" style="text-decoration:line-through;color:var(--text3)">50 лв</td><td><button class="ab">История</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ COMPLIANCE ════ -->
+<div class="pg" id="pg-compliance">
+  <div class="sg sg-3" style="margin-bottom:18px">
+    <div class="sc"><div class="sv" style="color:var(--ok)">11/14</div><div class="sl">МПС с валиден ГТП</div></div>
+    <div class="sc"><div class="sv" style="color:var(--ok)">14/14</div><div class="sl">С активна ГО застраховка</div></div>
+    <div class="sc"><div class="sv" style="color:var(--err)">3</div><div class="sl">Изтекли / критични</div></div>
+  </div>
+  <div class="c">
+    <div class="ch"><span class="ch-t">⚠️ МПС изискващи незабавно действие</span></div>
+    <div style="overflow-x:auto">
+    <table class="dt">
+      <thead><tr><th>МПС</th><th>Проблем</th><th>Изтекло на</th><th>Приоритет</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="tb">VW Golf <span class="plate" style="margin-left:6px">ПВ·3456·ЖЗ</span></td><td>ГТП преглед изтекъл</td><td>01.02.2026</td><td><span class="badge b-er"><span class="b-dot"></span>Критичен</span></td><td><button class="ab" onclick="openModal('m-booking')">Запази час</button></td></tr>
+        <tr><td class="tb">VW Golf <span class="plate" style="margin-left:6px">ПВ·3456·ЖЗ</span></td><td>Винетка изтекла</td><td>31.12.2025</td><td><span class="badge b-er"><span class="b-dot"></span>Критичен</span></td><td><button class="ab">Поднови</button></td></tr>
+        <tr><td class="tb">Mercedes Sprinter <span class="plate" style="margin-left:6px">СА·9012·ДЕ</span></td><td>ГТП изтича след 5 дни</td><td>30.04.2026</td><td><span class="badge b-w"><span class="b-dot"></span>Внимание</span></td><td><button class="ab" onclick="openModal('m-booking')">Запази час</button></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════ STATIONS ════ -->
+<div class="pg" id="pg-stations">
+  <div class="map-ph" style="margin-bottom:18px">
+    <div class="map-gl"></div>
+    <svg viewBox="0 0 480 220" style="position:absolute;inset:0;width:100%;height:100%" preserveAspectRatio="xMidYMid slice">
+      <line x1="0" y1="110" x2="480" y2="102" stroke="rgba(240,180,41,0.18)" stroke-width="3"/>
+      <line x1="160" y1="0" x2="160" y2="220" stroke="rgba(240,180,41,0.1)" stroke-width="2"/>
+      <line x1="310" y1="0" x2="280" y2="220" stroke="rgba(255,255,255,0.05)" stroke-width="1.5"/>
+      <circle cx="160" cy="102" r="20" fill="rgba(240,180,41,0.18)"/><circle cx="160" cy="102" r="11" fill="#F0B429"/><circle cx="160" cy="102" r="4" fill="#0D2461"/>
+      <circle cx="68" cy="82" r="9" fill="rgba(240,180,41,0.7)"/><circle cx="68" cy="82" r="3" fill="#0D2461"/>
+      <circle cx="310" cy="130" r="9" fill="rgba(217,79,79,0.85)"/><circle cx="310" cy="130" r="3" fill="white"/>
+      <circle cx="400" cy="60" r="8" fill="rgba(255,255,255,0.3)"/><circle cx="400" cy="60" r="2.5" fill="#0D2461"/>
+      <rect x="110" y="65" width="100" height="26" rx="7" fill="rgba(13,21,38,0.95)" stroke="rgba(240,180,41,0.3)" stroke-width="1"/>
+      <text x="160" y="82" text-anchor="middle" font-family="Ubuntu" font-size="9" fill="white" font-weight="700">ГТП Витоша</text>
+      <text x="160" y="92" text-anchor="middle" font-family="Ubuntu" font-size="8" fill="rgba(255,255,255,0.5)">1.2 км</text>
+    </svg>
+    <div class="map-overlay-bottom"><div style="font-size:11px;color:rgba(255,255,255,0.55)"><b style="color:#fff">12 пункта</b> в България</div><div style="font-size:10px;color:var(--gold);font-weight:700">● 10 свободни · 2 заети</div></div>
+  </div>
+  <div class="c" style="overflow-x:auto">
+    <table class="dt">
+      <thead><tr><th>Пункт</th><th>Адрес</th><th>Разстояние</th><th>Работно време</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="tb">ГТП Витоша</td><td>ул. Витоша 12, София</td><td style="color:var(--gold);font-weight:700">1.2 км</td><td>07:30–19:00 · Пн–Съб</td><td><span class="badge b-ok"><span class="b-dot"></span>Свободен</span></td><td><button class="ab ab-g" onclick="openModal('m-booking')">Запази →</button></td></tr>
+        <tr><td class="tb">ГТП Люлин</td><td>бул. Царица Йоана 56</td><td>3.8 км</td><td>08:00–18:00 · Пн–Съб</td><td><span class="badge b-ok"><span class="b-dot"></span>Свободен</span></td><td><button class="ab ab-g" onclick="openModal('m-booking')">Запази →</button></td></tr>
+        <tr><td class="tb">ГТП Младост</td><td>ул. Цветан Лазаров 12</td><td>4.5 км</td><td>08:00–17:00 · Пн–Пет</td><td><span class="badge b-er"><span class="b-dot"></span>Зает</span></td><td><button class="ab" style="opacity:0.45;cursor:default">Зает</button></td></tr>
+        <tr><td class="tb">ГТП В. Търново</td><td>ул. Никола Габровски 34</td><td>82 км</td><td>07:00–20:00 · Всеки ден</td><td><span class="badge b-ok"><span class="b-dot"></span>Свободен</span></td><td><button class="ab ab-g" onclick="openModal('m-booking')">Запази →</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ REPORTS ════ -->
+<div class="pg" id="pg-reports">
+  <div class="sg sg-3">
+    <div class="rep-card" onclick="toast('Справката се генерира...','📊')"><div class="rep-ic">📊</div><div class="rep-nm">Разходи по МПС</div><div class="rep-sub">Детайлна справка за разходите по всеки автомобил за избран период.</div><div style="display:flex;gap:6px;justify-content:center"><span class="tag tag-g">PDF</span><span class="tag tag-g">XLSX</span></div></div>
+    <div class="rep-card" onclick="toast('Справката се генерира...','📋')"><div class="rep-ic">📋</div><div class="rep-nm">История на прегледи</div><div class="rep-sub">Всички извършени ГТП прегледи, резултати и документи.</div><div style="display:flex;gap:6px;justify-content:center"><span class="tag tag-g">PDF</span><span class="tag tag-g">CSV</span></div></div>
+    <div class="rep-card" onclick="toast('Справката се генерира...','🛡')"><div class="rep-ic">🛡</div><div class="rep-nm">Съответствие флот</div><div class="rep-sub">Статус на всички документи, застраховки и срокове за целия флот.</div><div style="display:flex;gap:6px;justify-content:center"><span class="tag tag-g">PDF</span></div></div>
+  </div>
+</div>
+
+<!-- ════ COSTS ════ -->
+<div class="pg" id="pg-costs">
+  <div class="sg sg-3" style="margin-bottom:18px">
+    <div class="sc"><div class="sv">8 640</div><div class="sl">Общо разходи ГТП (лв) YTD</div></div>
+    <div class="sc"><div class="sv">617</div><div class="sl">Средно на МПС (лв)</div></div>
+    <div class="sc"><div class="sv" style="color:var(--ok)">−12%</div><div class="sl">Спрямо миналата година</div></div>
+  </div>
+  <div class="c" style="overflow-x:auto">
+    <div class="ch"><span class="ch-t">Разходи по МПС</span></div>
+    <table class="dt">
+      <thead><tr><th>МПС</th><th>ГТП прегледи</th><th>Допълнителни</th><th>Застраховки</th><th>Разни</th><th>Общо</th></tr></thead>
+      <tbody>
+        <tr><td class="tb">BMW X5 <span class="plate" style="margin-left:6px">СА·1234·АВ</span></td><td>105 лв</td><td>40 лв</td><td>620 лв</td><td>—</td><td class="tb">765 лв</td></tr>
+        <tr><td class="tb">Toyota Corolla <span class="plate" style="margin-left:6px">СА·5678·ВГ</span></td><td>70 лв</td><td>0 лв</td><td>480 лв</td><td>—</td><td class="tb">550 лв</td></tr>
+        <tr><td class="tb">Mercedes Sprinter <span class="plate" style="margin-left:6px">СА·9012·ДЕ</span></td><td>195 лв</td><td>60 лв</td><td>890 лв</td><td>—</td><td class="tb">1 145 лв</td></tr>
+        <tr><td class="tb">VW Golf <span class="plate" style="margin-left:6px">ПВ·3456·ЖЗ</span></td><td>100 лв</td><td>15 лв</td><td>390 лв</td><td>—</td><td class="tb">505 лв</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ USERS ════ -->
+<div class="pg" id="pg-users">
+  <div class="sec-row">
+    <div class="sec-title">3 активни потребители</div>
+    <button class="btn-g" onclick="toast('Поканата е изпратена','✉️')">+ Покани потребител</button>
+  </div>
+  <div class="c" style="overflow-x:auto">
+    <table class="dt">
+      <thead><tr><th>Потребител</th><th>Имейл</th><th>Роля</th><th>МПС достъп</th><th>Последно влизане</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="tb">👤 Иван Иванов</td><td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f49d82959ab4979b9984959a8dda9693">[email&#160;protected]</a></td><td><span class="badge b-ok">Администратор</span></td><td>Всички (14)</td><td>Днес, 09:14</td><td><button class="ab">Редактирай</button></td></tr>
+        <tr><td class="tb">👤 Мария Петрова</td><td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5a373b28333b1a3935372a3b342374383d">[email&#160;protected]</a></td><td><span class="badge b-w">Мениджър</span></td><td>8 МПС</td><td>Вчера, 16:30</td><td><button class="ab">Редактирай</button></td></tr>
+        <tr><td class="tb">👤 Петър Стоянов</td><td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3f4f5a4b5e4d7f5c50524f5e5146115d58">[email&#160;protected]</a></td><td><span class="badge b-n">Шофьор</span></td><td>2 МПС</td><td>28.03.2026</td><td><button class="ab">Редактирай</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ NOTIFICATIONS ════ -->
+<div class="pg" id="pg-notifpage">
+  <div class="c" style="max-width:700px">
+    <div class="ch"><span class="ch-t">Всички известия</span><button class="btn-s" style="padding:5px 11px;font-size:10.5px" onclick="toast('Всички маркирани','✓')">Маркирай всички</button></div>
+    <div class="cb">
+      <div class="ni-notif unread"><div class="ni-ico" style="background:rgba(217,79,79,0.1)">🚨</div><div style="flex:1"><div class="ni-t">ГТП на VW Golf е изтекъл — запазете час незабавно</div><div class="ni-time">Преди 2 часа</div></div><div class="ni-udot"></div></div>
+      <div class="ni-notif unread"><div class="ni-ico" style="background:rgba(232,149,32,0.1)">⚠️</div><div style="flex:1"><div class="ni-t">Mercedes Sprinter — ГТП изтича след 5 дни</div><div class="ni-time">Преди 4 часа</div></div><div class="ni-udot"></div></div>
+      <div class="ni-notif unread"><div class="ni-ico" style="background:rgba(29,184,122,0.1)">✅</div><div style="flex:1"><div class="ni-t">BMW X5 — резервацията е потвърдена (18.04 · 09:30)</div><div class="ni-time">Вчера, 15:30</div></div><div class="ni-udot"></div></div>
+      <div class="ni-notif"><div class="ni-ico" style="background:rgba(240,180,41,0.1)">📅</div><div style="flex:1"><div class="ni-t">Напомняне: Toyota Corolla — 22.04.2026 · ГТП Люлин</div><div class="ni-time">28.03.2026</div></div></div>
+      <div class="ni-notif"><div class="ni-ico" style="background:rgba(13,36,97,0.4)">📢</div><div style="flex:1"><div class="ni-t">Нов пункт открит в Пловдив — ГТП Тракия</div><div class="ni-time">25.03.2026</div></div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ SERVICE RECORDS ════ -->
+<div class="pg" id="pg-service">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div class="svc-stat-mini"><b>14</b> активни МПС</div>
+      <div class="svc-stat-mini"><b id="total-svc-cost">4 260</b> лв разходи YTD</div>
+      <div class="svc-stat-mini"><span style="color:var(--warn)">▲</span><b style="color:var(--warn)">3</b> предстоят скоро</div>
+    </div>
+    <button class="btn-g" onclick="openSvcModal()">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Добави запис
+    </button>
+  </div>
+
+  <!-- Vehicle selector tabs -->
+  <div class="svc-rec-tabs" id="svc-tabs">
+    <button class="svc-tab on" onclick="svcFilter('all',this)">Всички МПС</button>
+    <button class="svc-tab" onclick="svcFilter('BMW X5',this)">🚗 BMW X5</button>
+    <button class="svc-tab" onclick="svcFilter('Mercedes Sprinter',this)">🚐 Sprinter</button>
+    <button class="svc-tab" onclick="svcFilter('Toyota Corolla',this)">🚗 Corolla</button>
+    <button class="svc-tab" onclick="svcFilter('VW Golf',this)">🚗 VW Golf</button>
+  </div>
+
+  <div class="sg sg-62" style="margin-bottom:18px">
+    <!-- Service cards list -->
+    <div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">Интервали за обслужване</div>
+
+      <!-- Oil change -->
+      <div class="rec-card soon" data-car="BMW X5" onclick="openSvcDetailModal('oil','BMW X5')">
+        <div class="rec-ico" style="background:rgba(232,149,32,0.1)">🛢</div>
+        <div class="rec-body">
+          <div class="rec-name">Смяна на масло <span class="next-badge nb-warn">Скоро</span></div>
+          <div class="rec-meta">BMW X5 · Последна: 12.10.2025 · 142 400 км</div>
+          <div class="rec-bar-row">
+            <div class="rec-bar"><div class="rec-bar-fill" style="width:88%;background:var(--warn)"></div></div>
+            <span class="rec-bar-pct" style="color:var(--warn)">88%</span>
+          </div>
+        </div>
+        <div class="rec-actions">
+          <span class="rec-km">152 400 км</span>
+          <span class="rec-date">следваща</span>
+          <button class="ab ab-g" style="font-size:10px" onclick="event.stopPropagation();toast('Напомняне е добавено','🔔')">Напомни</button>
+        </div>
+      </div>
+
+      <!-- Brake pads -->
+      <div class="rec-card" data-car="BMW X5" onclick="openSvcDetailModal('brakes','BMW X5')">
+        <div class="rec-ico" style="background:rgba(29,184,122,0.1)">⚙️</div>
+        <div class="rec-body">
+          <div class="rec-name">Смяна на накладки <span class="next-badge nb-ok">OK</span></div>
+          <div class="rec-meta">BMW X5 · Последна: 05.04.2024 · 128 000 км</div>
+          <div class="rec-bar-row">
+            <div class="rec-bar"><div class="rec-bar-fill" style="width:42%;background:var(--ok)"></div></div>
+            <span class="rec-bar-pct" style="color:var(--ok)">42%</span>
+          </div>
+        </div>
+        <div class="rec-actions">
+          <span class="rec-km">168 000 км</span>
+          <span class="rec-date">следваща</span>
+        </div>
+      </div>
+
+      <!-- Tires -->
+      <div class="rec-card" data-car="Toyota Corolla">
+        <div class="rec-ico" style="background:rgba(13,36,97,0.4)">🔄</div>
+        <div class="rec-body">
+          <div class="rec-name">Смяна на гуми <span class="next-badge nb-ok">OK</span></div>
+          <div class="rec-meta">Toyota Corolla · Последна: 01.11.2025</div>
+          <div class="rec-bar-row">
+            <div class="rec-bar"><div class="rec-bar-fill" style="width:20%;background:var(--ok)"></div></div>
+            <span class="rec-bar-pct" style="color:var(--ok)">20%</span>
+          </div>
+        </div>
+        <div class="rec-actions">
+          <span class="rec-km">Nov 2026</span>
+          <span class="rec-date">следваща</span>
+        </div>
+      </div>
+
+      <!-- Timing belt - overdue -->
+      <div class="rec-card overdue" data-car="Mercedes Sprinter" onclick="openSvcDetailModal('belt','Mercedes Sprinter')">
+        <div class="rec-ico" style="background:rgba(217,79,79,0.1)">⚠️</div>
+        <div class="rec-body">
+          <div class="rec-name">Смяна на ангренажен ремък <span class="next-badge nb-err">Просрочен</span></div>
+          <div class="rec-meta">Mercedes Sprinter · Последна: Никога · 182 000 км</div>
+          <div class="rec-bar-row">
+            <div class="rec-bar"><div class="rec-bar-fill" style="width:100%;background:var(--err)"></div></div>
+            <span class="rec-bar-pct" style="color:var(--err)">100%</span>
+          </div>
+        </div>
+        <div class="rec-actions">
+          <span class="rec-km" style="color:var(--err)">Незабавно!</span>
+          <button class="ab" style="border-color:rgba(217,79,79,0.3);color:var(--err);font-size:10px" onclick="event.stopPropagation();openSvcModal()">Запиши</button>
+        </div>
+      </div>
+
+      <!-- Air filter -->
+      <div class="rec-card" data-car="VW Golf">
+        <div class="rec-ico" style="background:rgba(13,36,97,0.3)">💨</div>
+        <div class="rec-body">
+          <div class="rec-name">Въздушен филтър <span class="next-badge nb-ok">OK</span></div>
+          <div class="rec-meta">VW Golf · Последна: 20.05.2025 · 98 000 км</div>
+          <div class="rec-bar-row">
+            <div class="rec-bar"><div class="rec-bar-fill" style="width:55%;background:var(--gold)"></div></div>
+            <span class="rec-bar-pct" style="color:var(--gold)">55%</span>
+          </div>
+        </div>
+        <div class="rec-actions">
+          <span class="rec-km">118 000 км</span>
+          <span class="rec-date">следваща</span>
+        </div>
+      </div>
+
+      <!-- Coolant -->
+      <div class="rec-card" data-car="Toyota Corolla">
+        <div class="rec-ico" style="background:rgba(29,184,122,0.08)">🌡️</div>
+        <div class="rec-body">
+          <div class="rec-name">Смяна на антифриз <span class="next-badge nb-ok">OK</span></div>
+          <div class="rec-meta">Toyota Corolla · Последна: 15.12.2024</div>
+          <div class="rec-bar-row">
+            <div class="rec-bar"><div class="rec-bar-fill" style="width:30%;background:var(--ok)"></div></div>
+            <span class="rec-bar-pct" style="color:var(--ok)">30%</span>
+          </div>
+        </div>
+        <div class="rec-actions">
+          <span class="rec-km">Dec 2026</span>
+          <span class="rec-date">следваща</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel: history + cost -->
+    <div>
+      <div class="c" style="margin-bottom:14px">
+        <div class="ch">
+          <span class="ch-t">Разходи за обслужване</span>
+          <select style="background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:10.5px;color:var(--text2);outline:none">
+            <option>2026</option><option>2025</option>
+          </select>
+        </div>
+        <div class="cb" style="padding:12px 16px">
+          <svg width="100%" viewBox="0 0 260 120" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+            <defs>
+              <linearGradient id="sg2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#FFD166"/>
+                <stop offset="100%" stop-color="#C88A00"/>
+              </linearGradient>
+            </defs>
+            <rect x="4"   y="70" width="18" height="40" rx="2" fill="url(#sg2)"/>
+            <rect x="28"  y="50" width="18" height="60" rx="2" fill="url(#sg2)"/>
+            <rect x="52"  y="65" width="18" height="45" rx="2" fill="url(#sg2)"/>
+            <rect x="76"  y="30" width="18" height="80" rx="2" fill="url(#sg2)"/>
+            <rect x="100" y="55" width="18" height="55" rx="2" fill="url(#sg2)"/>
+            <rect x="124" y="40" width="18" height="70" rx="2" fill="url(#sg2)"/>
+            <rect x="148" y="20" width="18" height="90" rx="2" fill="url(#sg2)" opacity="0.4"/>
+            <text x="13"  y="118" text-anchor="middle" font-family="Ubuntu" font-size="8" fill="var(--color-text-tertiary)">Яну</text>
+            <text x="37"  y="118" text-anchor="middle" font-family="Ubuntu" font-size="8" fill="var(--color-text-tertiary)">Фев</text>
+            <text x="61"  y="118" text-anchor="middle" font-family="Ubuntu" font-size="8" fill="var(--color-text-tertiary)">Мар</text>
+            <text x="85"  y="118" text-anchor="middle" font-family="Ubuntu" font-size="8" fill="var(--color-text-tertiary)">Апр</text>
+            <text x="109" y="118" text-anchor="middle" font-family="Ubuntu" font-size="8" fill="var(--color-text-tertiary)">Май</text>
+            <text x="133" y="118" text-anchor="middle" font-family="Ubuntu" font-size="8" fill="var(--color-text-tertiary)">Юни</text>
+            <text x="157" y="118" text-anchor="middle" font-family="Ubuntu" font-size="8" fill="var(--color-text-secondary)">Юли</text>
+          </svg>
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            <span style="font-size:10px;color:var(--text3)">Общо 2026</span>
+            <span class="cost-pill">4 260 лв</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="c">
+        <div class="ch"><span class="ch-t">История на записи</span></div>
+        <div class="cb" style="padding:10px 16px">
+          <div class="history-row">
+            <div class="history-dot" style="background:var(--warn)"></div>
+            <div style="flex:1"><div class="history-title">Смяна на масло</div><div class="history-sub">BMW X5 · Мобил 1 5W-40 · 5л</div></div>
+            <div style="text-align:right"><div class="history-cost">180 лв</div><div class="history-date">12.10.2025</div></div>
+          </div>
+          <div class="history-row">
+            <div class="history-dot" style="background:var(--ok)"></div>
+            <div style="flex:1"><div class="history-title">Нови гуми (4 бр.)</div><div class="history-sub">Toyota Corolla · Michelin 205/55R16</div></div>
+            <div style="text-align:right"><div class="history-cost">760 лв</div><div class="history-date">01.11.2025</div></div>
+          </div>
+          <div class="history-row">
+            <div class="history-dot" style="background:var(--ok)"></div>
+            <div style="flex:1"><div class="history-title">Смяна на въздушен филтър</div><div class="history-sub">VW Golf · Mann Filter</div></div>
+            <div style="text-align:right"><div class="history-cost">45 лв</div><div class="history-date">20.05.2025</div></div>
+          </div>
+          <div class="history-row">
+            <div class="history-dot" style="background:var(--err)"></div>
+            <div style="flex:1"><div class="history-title">Ремонт на спирачна система</div><div class="history-sub">Sprinter · Накладки + дискове</div></div>
+            <div style="text-align:right"><div class="history-cost">640 лв</div><div class="history-date">15.03.2025</div></div>
+          </div>
+          <div class="history-row">
+            <div class="history-dot" style="background:var(--text3)"></div>
+            <div style="flex:1"><div class="history-title">Смяна на антифриз</div><div class="history-sub">Toyota Corolla · OAT</div></div>
+            <div style="text-align:right"><div class="history-cost">85 лв</div><div class="history-date">15.12.2024</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SETTINGS ════ -->
+<div class="pg" id="pg-settings">
+  <div class="sg sg-2">
+    <div>
+      <div class="c" style="margin-bottom:16px">
+        <div class="ch"><span class="ch-t">Профил</span></div>
+        <div class="mb" style="display:flex;flex-direction:column;gap:12px">
+          <div class="fr"><div class="fl">Фирма / Организация</div><input class="fi" value="Аутотест Флийт ООД"></div>
+          <div class="fg2">
+            <div class="fr" style="margin:0"><div class="fl">Имe</div><input class="fi" value="Иван"></div>
+            <div class="fr" style="margin:0"><div class="fl">Фамилия</div><input class="fi" value="Иванов"></div>
+          </div>
+          <div class="fr"><div class="fl">Имейл</div><input class="fi" value="ivan@company.bg"></div>
+          <div class="fr"><div class="fl">Телефон</div><input class="fi" value="+359 88 123 4567"></div>
+          <button class="btn-g" style="align-self:flex-start" onclick="toast('Промените са запазени','✓')">Запази промените</button>
+        </div>
+      </div>
+      <div class="c">
+        <div class="ch"><span class="ch-t">Известия</span></div>
+        <div class="mb" style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--text2)">Имейл за изтичащи ГТП</span><div class="tog on" onclick="this.classList.toggle('on')"><div class="tog-k"></div></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--text2)">SMS напомняния</span><div class="tog on" onclick="this.classList.toggle('on')"><div class="tog-k"></div></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--text2)">Push известия в браузъра</span><div class="tog" onclick="this.classList.toggle('on')"><div class="tog-k"></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="c">
+        <div class="ch"><span class="ch-t">Абонаментен план</span></div>
+        <div class="mb">
+          <div class="plan-row" style="grid-template-columns:1fr">
+            <div class="plan-c cur">
+              <span class="tag tag-g">Текущ план</span>
+              <div class="plan-nm">BASIC</div>
+              <div class="plan-pr">Безплатно</div>
+              <div class="plan-per">До 5 МПС · 1 потребител</div>
+              <div style="margin:14px 0 6px">
+                <div class="pf-row"><span class="pf-ck">✓</span>До 5 МПС</div>
+                <div class="pf-row"><span class="pf-ck">✓</span>Онлайн резервации</div>
+                <div class="pf-row"><span class="pf-ck">✓</span>Email известия</div>
+                <div class="pf-row" style="opacity:0.4"><span style="color:var(--text3)">✕</span>SMS напомняния</div>
+                <div class="pf-row" style="opacity:0.4"><span style="color:var(--text3)">✕</span>Неограничени потребители</div>
+              </div>
+              <button class="btn-g" style="width:100%;margin-top:6px" onclick="toast('Скоро ще бъдете пренасочени','⭐')">Надградете до PRO →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════ Modals ═══════ -->
+<div class="modal-bg" id="m-vehicle">
+  <div class="modal">
+    <div class="mh"><span class="mh-t">Добавяне на МПС</span><button class="mc" onclick="closeModal('m-vehicle')">✕</button></div>
+    <div class="mb">
+      <div class="fg2"><div class="fr"><div class="fl">Регистрационен №</div><input class="fi" placeholder="СА 1234 АВ" style="text-transform:uppercase"></div><div class="fr"><div class="fl">Категория</div><select class="fi"><option>B — Лек автомобил</option><option>C — Товарен</option><option>A — Мотоциклет</option><option>D — Автобус</option></select></div></div>
+      <div class="fg2"><div class="fr"><div class="fl">Марка</div><input class="fi" placeholder="BMW, Toyota..."></div><div class="fr"><div class="fl">Модел</div><input class="fi" placeholder="X5, Corolla..."></div></div>
+      <div class="fg2"><div class="fr"><div class="fl">Година</div><select class="fi"><option>2026</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option><option>2021</option><option>2020</option><option>2019</option></select></div><div class="fr"><div class="fl">Гориво</div><select class="fi"><option>Бензин</option><option>Дизел</option><option>Електрически</option><option>Хибрид</option><option>Газ (LPG)</option></select></div></div>
+      <div class="fr"><div class="fl">Присвои на потребител</div><select class="fi"><option>— Без присвояване —</option><option>Иван Иванов</option><option>Мария Петрова</option><option>Петър Стоянов</option></select></div>
+    </div>
+    <div class="mf"><button class="btn-s" onclick="closeModal('m-vehicle')">Отказ</button><button class="btn-g" onclick="closeModal('m-vehicle');toast('МПС е добавено успешно!','🚗')">Добави МПС →</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-booking">
+  <div class="modal">
+    <div class="mh"><span class="mh-t">Нова резервация</span><button class="mc" onclick="closeModal('m-booking')">✕</button></div>
+    <div class="mb">
+      <div class="fr"><div class="fl">Автомобил</div><select class="fi"><option>BMW X5 — СА 1234 АВ</option><option>Toyota Corolla — СА 5678 ВГ</option><option>Mercedes Sprinter — СА 9012 ДЕ</option><option>VW Golf — ПВ 3456 ЖЗ</option></select></div>
+      <div class="fr"><div class="fl">Вид услуга</div><select class="fi"><option>ГТП — Годишен технически преглед (35 лв)</option><option>ГТП + Проверка на емисии (50 лв)</option><option>ГТП Кат. C — Товарен (65 лв)</option></select></div>
+      <div class="fg2"><div class="fr"><div class="fl">Пункт</div><select class="fi"><option>ГТП Витоша — 1.2 км</option><option>ГТП Люлин — 3.8 км</option><option>ГТП В.Търново — 82 км</option></select></div><div class="fr"><div class="fl">Дата</div><input class="fi" type="date" value="2026-04-18"></div></div>
+      <div class="fr"><div class="fl">Час</div><div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="ab" style="padding:6px 11px" onclick="selTime(this)">08:00</button>
+        <button class="ab ab-g" style="padding:6px 11px" onclick="selTime(this)">09:30</button>
+        <button class="ab" style="padding:6px 11px" onclick="selTime(this)">11:00</button>
+        <button class="ab" style="padding:6px 11px" onclick="selTime(this)">13:00</button>
+        <button class="ab" style="padding:6px 11px" onclick="selTime(this)">14:30</button>
+      </div></div>
+    </div>
+    <div class="mf"><button class="btn-s" onclick="closeModal('m-booking')">Отказ</button><button class="btn-g" onclick="closeModal('m-booking');toast('Резервацията е запазена!','✅')">Запази час →</button></div>
+  </div>
+</div>
+
+
+<!-- ════ Service Record Modal ════ -->
+<div class="modal-bg" id="m-service">
+  <div class="modal">
+    <div class="mh"><span class="mh-t">Нов запис за обслужване</span><button class="mc" onclick="closeModal('m-service')">✕</button></div>
+    <div class="mb">
+
+      <!-- Service type grid -->
+      <div class="fl">Тип обслужване</div>
+      <div class="svc-type-grid" id="svc-type-grid">
+        <button class="svc-type-btn on" onclick="selSvcType(this)"><span>🛢</span>Смяна на масло</button>
+        <button class="svc-type-btn" onclick="selSvcType(this)"><span>⚙️</span>Накладки</button>
+        <button class="svc-type-btn" onclick="selSvcType(this)"><span>🔄</span>Гуми</button>
+        <button class="svc-type-btn" onclick="selSvcType(this)"><span>💨</span>Въздушен филтър</button>
+        <button class="svc-type-btn" onclick="selSvcType(this)"><span>🌡️</span>Антифриз</button>
+        <button class="svc-type-btn" onclick="selSvcType(this)"><span>⚡</span>Акумулатор</button>
+        <button class="svc-type-btn" onclick="selSvcType(this)"><span>🔧</span>Ангренаж</button>
+        <button class="svc-type-btn" onclick="selSvcType(this)"><span>🛞</span>Кормилна рейка</button>
+        <button class="svc-type-btn" onclick="selSvcType(this)"><span>📝</span>Друго</button>
+      </div>
+
+      <div class="svc-form-grid">
+        <div class="fr">
+          <div class="fl">Автомобил</div>
+          <select class="fi">
+            <option>BMW X5 — СА 1234 АВ</option>
+            <option>Toyota Corolla — СА 5678 ВГ</option>
+            <option>Mercedes Sprinter — СА 9012 ДЕ</option>
+            <option>VW Golf — ПВ 3456 ЖЗ</option>
+          </select>
+        </div>
+        <div class="fr">
+          <div class="fl">Дата на обслужване</div>
+          <input class="fi" type="date" value="2026-04-01">
+        </div>
+        <div class="fr">
+          <div class="fl">Километраж (км)</div>
+          <input class="fi" type="number" placeholder="142 400" style="font-family:'Ubuntu Mono',monospace">
+        </div>
+        <div class="fr">
+          <div class="fl">Стойност (лв)</div>
+          <input class="fi" type="number" placeholder="180">
+        </div>
+      </div>
+
+      <div class="fr">
+        <div class="fl">Описание / Марка продукт</div>
+        <input class="fi" type="text" placeholder="Напр. Мобил 1 5W-40 · 5л · Shell Helix">
+      </div>
+
+      <div class="svc-form-grid">
+        <div class="fr">
+          <div class="fl">Следващо обслужване (км)</div>
+          <input class="fi" type="number" placeholder="152 400" style="font-family:'Ubuntu Mono',monospace">
+        </div>
+        <div class="fr">
+          <div class="fl">Следващо обслужване (дата)</div>
+          <input class="fi" type="date" value="2026-10-01">
+        </div>
+      </div>
+
+      <div class="fr">
+        <div class="fl">Изпълнено от</div>
+        <select class="fi">
+          <option>— Изберете —</option>
+          <option>Официален сервиз BMW</option>
+          <option>AutoLine сервиз</option>
+          <option>Собствено обслужване</option>
+        </select>
+      </div>
+
+      <div class="fr">
+        <div class="fl">Бележки</div>
+        <textarea class="fi" rows="2" style="resize:vertical" placeholder="Допълнителна информация за обслужването..."></textarea>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0 2px">
+        <input type="checkbox" id="svc-reminder-cb" style="accent-color:var(--gold)">
+        <label for="svc-reminder-cb" style="font-size:12px;color:var(--text2);cursor:pointer">Добави напомняне при следващото обслужване</label>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn-s" onclick="closeModal('m-service')">Отказ</button>
+      <button class="btn-g" onclick="closeModal('m-service');toast('Записът е добавен успешно!','🔧')">Запази запис →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"><span id="toast-ic">✓</span>&nbsp;<span id="toast-msg">Действието е успешно</span></div>
+
+<!-- Toggle CSS -->
+<style>
+.tog{width:40px;height:22px;border-radius:11px;background:var(--bg5);cursor:pointer;position:relative;transition:background 0.2s;border:1px solid var(--border);flex-shrink:0}
+.tog.on{background:var(--gold);border-color:var(--gold)}
+.tog-k{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text3);transition:transform 0.2s,background 0.2s}
+.tog.on .tog-k{transform:translateX(18px);background:#000}
+</style>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js">
+TITLES['service']='Обслужване на МПС';
+
+function openSvcModal() { openModal('m-service'); }
+
+function selSvcType(btn) {
+  btn.closest('#svc-type-grid').querySelectorAll('.svc-type-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function svcFilter(car, btn) {
+  document.querySelectorAll('.svc-tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.rec-card').forEach(c => {
+    c.style.display = (car === 'all' || c.dataset.car === car) ? '' : 'none';
+  });
+}
+
+function openSvcDetailModal(type, car) {
+  openModal('m-service');
+}
+
+</script><script>
+var authMode='login', authTypeMode='personal';
+
+function authTab(t,btn){
+  authMode=t;
+  document.querySelectorAll('.auth-seg-btn').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  document.getElementById('form-login').style.display=t==='login'?'block':'none';
+  document.getElementById('form-reg').style.display=t==='reg'?'block':'none';
+}
+function authType(t){
+  authTypeMode=t;
+  document.getElementById('tp-personal').classList.toggle('on',t==='personal');
+  document.getElementById('tp-biz').classList.toggle('on',t==='biz');
+  document.getElementById('biz-extra').style.display=t==='biz'?'block':'none';
+}
+function doLogin(){
+  var auth=document.getElementById('auth');
+  var app=document.getElementById('app');
+  auth.style.opacity='0';auth.style.transition='opacity 0.4s';
+  setTimeout(()=>{
+    auth.style.display='none';
+    app.classList.add('on');
+    if(authTypeMode==='biz'){
+      document.getElementById('u-role').textContent='Флийт Мениджър';
+      document.getElementById('sb-plan').textContent='FLEET';
+      document.getElementById('u-plan').textContent='FLEET';
+    }
+  },400);
+}
+
+var TITLES={dashboard:'Табло',fleet:'Автомобилен парк',bookings:'Резервации',compliance:'Съответствие',stations:'Пунктове',reports:'Справки',costs:'Разходи',users:'Потребители',notifpage:'Известия',settings:'Настройки',service:'Обслужване на МПС'};
+function nav(id,el){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  var p=document.getElementById('pg-'+id);if(p)p.classList.add('on');
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  var t=document.getElementById('tb-title');if(t)t.textContent=TITLES[id]||'Табло';
+}
+function openModal(id){document.getElementById(id).classList.add('on');}
+function closeModal(id){document.getElementById(id).classList.remove('on');}
+document.querySelectorAll('.modal-bg').forEach(b=>{
+  b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('on');});
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-bg.on').forEach(m=>m.classList.remove('on'));});
+function selTime(btn){
+  btn.closest('div').querySelectorAll('.ab').forEach(b=>b.classList.remove('ab-g'));
+  btn.classList.add('ab-g');
+}
+function toast(msg,ic){
+  var el=document.getElementById('toast-el');
+  document.getElementById('toast-ic').textContent=ic||'✓';
+  document.getElementById('toast-msg').textContent=msg;
+  el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'),3000);
+}
+TITLES['service']='Обслужване на МПС';
+function openSvcModal() { openModal('m-service'); }
+function selSvcType(btn) {
+  btn.closest('#svc-type-grid').querySelectorAll('.svc-type-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function svcFilter(car, btn) {
+  document.querySelectorAll('.svc-tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.rec-card').forEach(c => {
+    c.style.display = (car === 'all' || c.dataset.car === car) ? '' : 'none';
+  });
+}
+function openSvcDetailModal(type, car) { openModal('m-service'); }
+</script>
+</body>
+</html>
